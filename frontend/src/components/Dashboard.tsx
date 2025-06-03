@@ -16,11 +16,12 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
       setEthBalance(null);
       return;
     }
+
     const fetchBalance = async () => {
       setLoading(true);
       setError("");
       try {
-        const res = await axios.get(\`/api/portfolio/\${userAddress}\`);
+        const res = await axios.get(`/api/portfolio/${userAddress}`);
         setEthBalance(res.data.ethBalance);
       } catch {
         setError("Failed to load balance.");
@@ -29,6 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
         setLoading(false);
       }
     };
+
     fetchBalance();
   }, [userAddress]);
 
@@ -43,7 +45,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
         <Text color="red.500">{error}</Text>
       ) : (
         <VStack align="start" spacing={1}>
-          <Text>ETH Balance: {ethBalance !== null ? \`\${ethBalance} ETH\` : "N/A"}</Text>
+          <Text>ETH Balance: {ethBalance !== null ? `${ethBalance} Ξ` : "N/A"}</Text>
         </VStack>
       )}
     </Box>

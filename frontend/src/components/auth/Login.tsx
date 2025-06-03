@@ -1,3 +1,5 @@
+// src/components/auth/Login.tsx
+
 import React, { useState } from "react";
 import {
   Box,
@@ -28,7 +30,11 @@ const Login: React.FC = () => {
     }
     setLoading(true);
     try {
-      const resp = await axios.post("/auth/login", { username, password });
+      const resp = await axios.post("http://localhost:4000/api/auth/login", {
+        username,
+        password,
+      });
+      // Store the returned JWT into localStorage
       setToken(resp.data.token);
       navigate("/app");
     } catch (err: any) {
@@ -44,6 +50,7 @@ const Login: React.FC = () => {
         <Text fontSize="2xl" fontWeight="bold">
           Login
         </Text>
+
         <FormControl id="username">
           <FormLabel>Username</FormLabel>
           <Input
@@ -52,6 +59,7 @@ const Login: React.FC = () => {
             placeholder="Enter your username"
           />
         </FormControl>
+
         <FormControl id="password">
           <FormLabel>Password</FormLabel>
           <Input
@@ -61,14 +69,17 @@ const Login: React.FC = () => {
             placeholder="Enter your password"
           />
         </FormControl>
+
         {error && (
           <Text color="red.500" fontSize="sm">
             {error}
           </Text>
         )}
+
         <Button colorScheme="blue" onClick={handleLogin} isLoading={loading}>
           Login
         </Button>
+
         <Text fontSize="sm">
           Don’t have an account?{" "}
           <Link as={RouterLink} to="/register" color="blue.500">

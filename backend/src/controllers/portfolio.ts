@@ -1,18 +1,29 @@
+// src/controllers/portfolio.ts
+
 import { Router, Request, Response } from "express";
-import { getEthBalance } from "../services/defi";
+import { ethers } from "ethers";
+import { ALCHEMY_API_URL } from "../utils/config";
 
 const router = Router();
+const provider = new ethers.JsonRpcProvider(ALCHEMY_API_URL);
 
-router.get("/portfolio/:address", async (req: Request, res: Response) => {
-  const username = (req as any).user.username;
-  console.log(\`User \${username} fetching portfolio for \${req.params.address}\`);
-  try {
+router.get(
+  "/portfolio/:address",
+  async (req: Request, res: Response): Promise<void> => {
     const { address } = req.params;
-    const ethBalance = await getEthBalance(address);
-    return res.json({ ethBalance });
-  } catch (err: any) {
-    return res.status(500).json({ error: "Failed to fetch portfolio" });
+    if (!address || !ethers.isAddress(address)) {
+      res.status(400).json({ error: "Invalid address." });
+      return;
+    }
+    try {
+      const balance = await provider.getBalance(address);
+      const ethBalance = ethers.formatEther(balance);
+      res.json({ ethBalance });
+    } catch (err) {
+      console.error("Portfolio controller error:", err);
+      res.status(500).json({ error: "Failed to fetch balance" });
+    }
   }
-});
+);
 
 export default router;

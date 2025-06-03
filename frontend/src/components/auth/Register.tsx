@@ -27,7 +27,10 @@ const Register: React.FC = () => {
     }
     setLoading(true);
     try {
-      await axios.post("/auth/register", { username, password });
+      await axios.post("http://localhost:4000/api/auth/register", {
+        username,
+        password,
+      });
       navigate("/login");
     } catch (err: any) {
       setError(err.response?.data?.error || "Registration failed.");
@@ -42,6 +45,7 @@ const Register: React.FC = () => {
         <Text fontSize="2xl" fontWeight="bold">
           Register
         </Text>
+
         <FormControl id="username">
           <FormLabel>Username</FormLabel>
           <Input
@@ -50,6 +54,7 @@ const Register: React.FC = () => {
             placeholder="Choose a username"
           />
         </FormControl>
+
         <FormControl id="password">
           <FormLabel>Password</FormLabel>
           <Input
@@ -59,14 +64,21 @@ const Register: React.FC = () => {
             placeholder="Choose a password"
           />
         </FormControl>
+
         {error && (
           <Text color="red.500" fontSize="sm">
             {error}
           </Text>
         )}
-        <Button colorScheme="blue" onClick={handleRegister} isLoading={loading}>
+
+        <Button
+          colorScheme="blue"
+          onClick={handleRegister}
+          isLoading={loading}
+        >
           Register
         </Button>
+
         <Text fontSize="sm">
           Already have an account?{" "}
           <Link as={RouterLink} to="/login" color="blue.500">

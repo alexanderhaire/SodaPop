@@ -55,20 +55,20 @@ const App: React.FC = () => {
                 <Button
                   key={connector.id}
                   onClick={() => connect({ connector })}
-                  isLoading={
-                    connectLoading && connector.id === connectors[0]?.id
-                  }
+                  isLoading={connectLoading && connector.id === connectors[0]?.id}
                   size="sm"
                 >
                   Connect Wallet
                 </Button>
               ))
             )}
-            <Button size="sm" onClick={handleLogout}>Logout</Button>
+            <Button size="sm" onClick={handleLogout}>
+              Logout
+            </Button>
           </HStack>
         </HStack>
       </Box>
-      <Grid templateColumns="2fr 1fr" height="calc(100vh - 56px)">
+      <Grid templateColumns="1fr 1fr" height="calc(100vh - 56px)">
         <GridItem
           colSpan={1}
           borderRight="1px"
@@ -77,7 +77,9 @@ const App: React.FC = () => {
           display="flex"
           flexDirection="column"
         >
-          <Heading size="md" mb={2}>ChatGPT – SodaPop</Heading>
+          <Heading size="md" mb={4}>
+            ChatGPT – SodaPop
+          </Heading>
           <ChatWindow />
         </GridItem>
         <GridItem colSpan={1} p={4}>
