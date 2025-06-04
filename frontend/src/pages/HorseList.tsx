@@ -1,68 +1,50 @@
-// File: frontend/src/pages/HorseList.tsx
-
 import React from "react";
 import {
   Box,
   Heading,
-  Text,
   Button,
   VStack,
   HStack,
   Image,
+  Text,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
+import horses from "../mocks/horses.json";
 
 const HorseList: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleBuyShare = () => {
-    alert("Buying one fractional share of SodaPop!");
-    // e.g., navigate("/buy/sodapop") or call on-chain function
-  };
-
-  const viewDetails = () => {
-    navigate("/horses/sodapop");
-  };
-
   return (
     <Box p={6}>
-      <Heading mb={4}>Available Horses</Heading>
-
-      {/* Single‐card layout for “SodaPop” */}
-      <Box
-        border="1px"
-        borderColor="gray.200"
-        borderRadius="md"
-        overflow="hidden"
-        maxW="400px"
-        boxShadow="md"
-      >
-        {/* Remove fixed height so the entire portrait (including “SODA POP” text) is visible */}
-        <Image
-          src="/images/sodapop.png"
-          alt="SodaPop"
-          objectFit="cover"
-          w="100%"
-          // Let height adjust automatically to preserve full image
-          h="auto"
-          borderTopRadius="md"
-        />
-
-        <VStack align="start" spacing={2} p={4}>
-          <Heading size="sm">SodaPop</Heading>
-          <Text fontSize="sm" color="gray.600">
-            Fractional horse ownership—buy as little as 0.1 share!
-          </Text>
-          <HStack spacing={2} mt={2}>
-            <Button colorScheme="teal" size="sm" onClick={handleBuyShare}>
-              Buy Share
-            </Button>
-            <Button variant="outline" size="sm" onClick={viewDetails}>
+      <Heading mb={6}>Available Horses</Heading>
+      <VStack spacing={6} align="stretch">
+        {horses.map((horse) => (
+          <HStack
+            key={horse.id}
+            p={4}
+            borderWidth={1}
+            borderRadius="lg"
+            justify="space-between"
+            align="center"
+          >
+            <HStack spacing={4}>
+              <Image
+                src={`/images/${horse.id}.png`}
+                alt={horse.name}
+                boxSize="100px"
+                borderRadius="md"
+              />
+              <Box>
+                <Heading size="md">{horse.name}</Heading>
+                <Text color="gray.500">{horse.record}</Text>
+              </Box>
+            </HStack>
+            <Button onClick={() => navigate(`/horses/${horse.id}`)}>
               Details
             </Button>
           </HStack>
-        </VStack>
-      </Box>
+        ))}
+      </VStack>
     </Box>
   );
 };

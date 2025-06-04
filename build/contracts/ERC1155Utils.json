@@ -2065,7 +2065,7 @@
   },
   "networks": {},
   "schemaVersion": "3.4.16",
-  "updatedAt": "2025-06-04T02:01:32.447Z",
+  "updatedAt": "2025-06-04T11:33:27.558Z",
   "devdoc": {
     "details": "Library that provide common ERC-1155 utility functions. See https://eips.ethereum.org/EIPS/eip-1155[ERC-1155]. _Available since v5.1._",
     "kind": "dev",

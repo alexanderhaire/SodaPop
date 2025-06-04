@@ -1,14 +1,9 @@
 // File: frontend/src/main.tsx
-// Replace existing content with this merged version
 
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "./index.css";
-import App from "./App";
-
-import { ChakraProvider } from "@chakra-ui/react";
 import { BrowserRouter } from "react-router-dom";
-
+import { ChakraProvider } from "@chakra-ui/react";
 import {
   WagmiConfig,
   createConfig,
@@ -17,8 +12,10 @@ import {
 } from "wagmi";
 import { publicProvider } from "wagmi/providers/public";
 import { MetaMaskConnector } from "wagmi/connectors/metaMask";
+import App from "./App";
+import "./index.css";
 
-// Define Optimism Sepolia manually
+// Define Optimism Sepolia chain
 const optimismSepolia: Chain = {
   id: 11155420,
   name: "Optimism Sepolia",
@@ -45,12 +42,13 @@ const optimismSepolia: Chain = {
   testnet: true,
 };
 
-// Configure chains and connectors
-const { chains, publicClient } = configureChains(
+// Configure chains and provider
+const { chains, publicClient, webSocketPublicClient } = configureChains(
   [optimismSepolia],
   [publicProvider()]
 );
 
+// Create the Wagmi client
 const wagmiConfig = createConfig({
   autoConnect: true,
   connectors: [
@@ -62,9 +60,13 @@ const wagmiConfig = createConfig({
     }),
   ],
   publicClient,
+  webSocketPublicClient,
 });
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+const rootElement = document.getElementById("root")!;
+const root = ReactDOM.createRoot(rootElement);
+
+root.render(
   <React.StrictMode>
     <WagmiConfig config={wagmiConfig}>
       <ChakraProvider>

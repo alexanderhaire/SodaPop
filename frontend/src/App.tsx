@@ -15,6 +15,7 @@ import { formatAddress } from "./utils/formatAddress";
 import HorseList from "./pages/HorseList";
 import HorseDetail from "./pages/HorseDetail";
 import Chatbot from "./pages/Chatbot";
+import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 
 const App: React.FC = () => {
   const { address, isConnected } = useAccount();
@@ -38,9 +39,10 @@ const App: React.FC = () => {
         bg="white"
       >
         <HStack justify="space-between">
-          <Heading size="md">SodaPop DeFi Assistant</Heading>
+          <Heading size="md" cursor="pointer" onClick={() => navigate("/")}>
+            SodaPop DeFi Assistant
+          </Heading>
 
-          {/* “Horses” button to navigate to HorseList */}
           <Button
             variant="ghost"
             onClick={() => navigate("/")}
@@ -48,6 +50,15 @@ const App: React.FC = () => {
             size="sm"
           >
             Horses
+          </Button>
+
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/analytics")}
+            _hover={{ bg: "gray.100" }}
+            size="sm"
+          >
+            Analytics
           </Button>
 
           <HStack spacing={3}>
@@ -84,6 +95,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<HorseList />} />
         <Route path="/horses/:id" element={<HorseDetail />} />
+        <Route path="/analytics" element={<AnalyticsDashboard />} />
       </Routes>
 
       <Box position="fixed" bottom={4} right={4} zIndex={10}>

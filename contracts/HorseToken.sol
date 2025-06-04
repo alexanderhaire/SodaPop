@@ -14,13 +14,8 @@ contract HorseToken is ERC1155, Ownable {
         totalSupply = 0;
     }
 
-    function mint(
-        address to,
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) external onlyOwner {
-        _mint(to, id, amount, data);
+    function mint(address to, uint256 id, uint256 amount) public {
+        _mint(to, id, amount, "");
         totalSupply += amount;
         horseSupply[id] += amount;
     }
