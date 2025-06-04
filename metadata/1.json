@@ -1,0 +1,20 @@
+{
+    "name": "Thunderhoof",
+    "description": "A strong and fast racehorse known for its explosive starts.",
+    "image": "http://127.0.0.1:8080/images/soda-pop.png",
+    "attributes": [
+      {
+        "trait_type": "Speed",
+        "value": 92
+      },
+      {
+        "trait_type": "Stamina",
+        "value": 87
+      },
+      {
+        "trait_type": "Temperament",
+        "value": "Calm"
+      }
+    ]
+  }
+  

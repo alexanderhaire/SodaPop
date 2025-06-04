@@ -1,8 +1,8 @@
+// File: frontend/src/App.tsx
+
 import React from "react";
+import { Routes, Route, useNavigate } from "react-router-dom";
 import {
-  ChakraProvider,
-  Grid,
-  GridItem,
   Box,
   Heading,
   HStack,
@@ -10,12 +10,11 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { useNavigate } from "react-router-dom";
 import { clearToken } from "./utils/authToken";
 import { formatAddress } from "./utils/formatAddress";
-
-import ChatWindow from "./components/ChatWindow";
-import Dashboard from "./components/Dashboard";
+import HorseList from "./pages/HorseList";
+import HorseDetail from "./pages/HorseDetail";
+import Chatbot from "./pages/Chatbot";
 
 const App: React.FC = () => {
   const { address, isConnected } = useAccount();
@@ -29,7 +28,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <ChakraProvider>
+    <Box>
       <Box
         as="header"
         px={4}
@@ -40,6 +39,17 @@ const App: React.FC = () => {
       >
         <HStack justify="space-between">
           <Heading size="md">SodaPop DeFi Assistant</Heading>
+
+          {/* “Horses” button to navigate to HorseList */}
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/")}
+            _hover={{ bg: "gray.100" }}
+            size="sm"
+          >
+            Horses
+          </Button>
+
           <HStack spacing={3}>
             {isConnected && address ? (
               <>
@@ -47,7 +57,7 @@ const App: React.FC = () => {
                   Connected: {formatAddress(address)}
                 </Text>
                 <Button size="sm" onClick={() => disconnect()}>
-                  Disconnect
+                  Disconnect Wallet
                 </Button>
               </>
             ) : (
@@ -55,7 +65,9 @@ const App: React.FC = () => {
                 <Button
                   key={connector.id}
                   onClick={() => connect({ connector })}
-                  isLoading={connectLoading && connector.id === connectors[0]?.id}
+                  isLoading={
+                    connectLoading && connector.id === connectors?.[0]?.id
+                  }
                   size="sm"
                 >
                   Connect Wallet
@@ -68,25 +80,18 @@ const App: React.FC = () => {
           </HStack>
         </HStack>
       </Box>
-      <Grid templateColumns="1fr 1fr" height="calc(100vh - 56px)">
-        <GridItem
-          colSpan={1}
-          borderRight="1px"
-          borderColor="gray.200"
-          p={4}
-          display="flex"
-          flexDirection="column"
-        >
-          <Heading size="md" mb={4}>
-            ChatGPT – SodaPop
-          </Heading>
-          <ChatWindow />
-        </GridItem>
-        <GridItem colSpan={1} p={4}>
-          <Dashboard userAddress={address} />
-        </GridItem>
-      </Grid>
-    </ChakraProvider>
+
+      <Routes>
+        <Route path="/" element={<HorseList />} />
+        <Route path="/horses/:id" element={<HorseDetail />} />
+      </Routes>
+
+      <Box position="fixed" bottom={4} right={4} zIndex={10}>
+        <React.Suspense fallback={null}>
+          <Chatbot />
+        </React.Suspense>
+      </Box>
+    </Box>
   );
 };
 

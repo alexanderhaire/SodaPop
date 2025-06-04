@@ -1,5 +1,4 @@
 // src/components/auth/AuthRoutes.tsx
-
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { getToken } from "../../utils/authToken";
@@ -12,34 +11,32 @@ const AuthRoutes: React.FC = () => {
 
   return (
     <Routes>
-      {/* Landing redirect: if logged in → /app, otherwise → /login */}
+      {/* if user hits “/”, send them to either /app or /login */}
       <Route
         path="/"
-        element={
-          isLoggedIn ? <Navigate to="/app" replace /> : <Navigate to="/login" replace />
-        }
+        element={isLoggedIn ? <Navigate to="/app" /> : <Navigate to="/login" />}
       />
 
-      {/* Protected “/app” route */}
+      {/* /app is protected; only show <App /> if logged in */}
       <Route
         path="/app"
-        element={isLoggedIn ? <App /> : <Navigate to="/login" replace />}
+        element={isLoggedIn ? <App /> : <Navigate to="/login" />}
       />
 
-      {/* Public “/login” */}
+      {/* /login only if ‍not logged in; otherwise bounce to /app */}
       <Route
         path="/login"
-        element={isLoggedIn ? <Navigate to="/app" replace /> : <Login />}
+        element={!isLoggedIn ? <Login /> : <Navigate to="/app" />}
       />
 
-      {/* Public “/register” */}
+      {/* /register only if ‍not logged in; otherwise bounce to /app */}
       <Route
         path="/register"
-        element={isLoggedIn ? <Navigate to="/app" replace /> : <Register />}
+        element={!isLoggedIn ? <Register /> : <Navigate to="/app" />}
       />
 
-      {/* Catch‐all: redirect anything else back to “/” */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      {/* catch-all → redirect back to “/” */}
+      <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
 };

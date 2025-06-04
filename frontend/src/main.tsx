@@ -1,7 +1,10 @@
+// File: frontend/src/main.tsx
+// Replace existing content with this merged version
+
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import AuthRoutes from "./components/auth/AuthRoutes";
+import App from "./App";
 
 import { ChakraProvider } from "@chakra-ui/react";
 import { BrowserRouter } from "react-router-dom";
@@ -42,7 +45,6 @@ const optimismSepolia: Chain = {
   testnet: true,
 };
 
-
 // Configure chains and connectors
 const { chains, publicClient } = configureChains(
   [optimismSepolia],
@@ -62,13 +64,12 @@ const wagmiConfig = createConfig({
   publicClient,
 });
 
-// Mount the app
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <WagmiConfig config={wagmiConfig}>
       <ChakraProvider>
         <BrowserRouter>
-          <AuthRoutes />
+          <App />
         </BrowserRouter>
       </ChakraProvider>
     </WagmiConfig>

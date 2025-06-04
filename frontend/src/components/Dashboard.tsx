@@ -1,3 +1,5 @@
+// src/components/Dashboard.tsx
+
 import React, { useEffect, useState } from "react";
 import { Box, Text, Spinner, VStack } from "@chakra-ui/react";
 import axios from "../utils/axiosConfig";
@@ -21,7 +23,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
       setLoading(true);
       setError("");
       try {
-        const res = await axios.get(`/api/portfolio/${userAddress}`);
+        // axiosConfig already has baseURL="http://localhost:4000/api"
+        const res = await axios.get(`/portfolio/${userAddress}`);
         setEthBalance(res.data.ethBalance);
       } catch {
         setError("Failed to load balance.");
@@ -36,7 +39,9 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
 
   return (
     <Box>
-      <Text fontSize="lg" fontWeight="bold" mb={2}>Portfolio</Text>
+      <Text fontSize="lg" fontWeight="bold" mb={2}>
+        Portfolio
+      </Text>
       {!userAddress ? (
         <Text color="gray.500">Connect your wallet to view portfolio.</Text>
       ) : loading ? (
@@ -45,7 +50,9 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
         <Text color="red.500">{error}</Text>
       ) : (
         <VStack align="start" spacing={1}>
-          <Text>ETH Balance: {ethBalance !== null ? `${ethBalance} Ξ` : "N/A"}</Text>
+          <Text>
+            ETH Balance: {ethBalance !== null ? `${ethBalance} Ξ` : "N/A"}
+          </Text>
         </VStack>
       )}
     </Box>
