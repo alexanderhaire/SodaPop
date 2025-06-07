@@ -1,47 +1,49 @@
-// src/components/Dashboard.tsx
-
 import React, { useEffect, useState } from "react";
-import { Box, Text, Spinner, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Text,
+  Spinner,
+  VStack,
+  Heading,
+  Badge,
+  Progress,
+} from "@chakra-ui/react";
 import axios from "../utils/axiosConfig";
+import { Link } from "react-router-dom";
 
 interface DashboardProps {
   userAddress?: string;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
-  const [ethBalance, setEthBalance] = useState<string | null>(null);
+  const [horses, setHorses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!userAddress) {
-      setEthBalance(null);
-      return;
-    }
+    if (!userAddress) return;
 
-    const fetchBalance = async () => {
+    const fetchEarnings = async () => {
       setLoading(true);
       setError("");
       try {
-        // axiosConfig already has baseURL="http://localhost:4000/api"
-        const res = await axios.get(`/portfolio/${userAddress}`);
-        setEthBalance(res.data.ethBalance);
-      } catch {
-        setError("Failed to load balance.");
-        setEthBalance(null);
+        const res = await axios.get(`/earnings/${userAddress}`);
+        setHorses(res.data);
+      } catch (err) {
+        setError("Unable to load earnings.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchBalance();
+    fetchEarnings();
   }, [userAddress]);
 
   return (
     <Box>
-      <Text fontSize="lg" fontWeight="bold" mb={2}>
-        Portfolio
-      </Text>
+      <Heading size="lg" mb={4}>
+        My Racehorse Earnings
+      </Heading>
       {!userAddress ? (
         <Text color="gray.500">Connect your wallet to view portfolio.</Text>
       ) : loading ? (
@@ -49,10 +51,36 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
       ) : error ? (
         <Text color="red.500">{error}</Text>
       ) : (
-        <VStack align="start" spacing={1}>
-          <Text>
-            ETH Balance: {ethBalance !== null ? `${ethBalance} Ξ` : "N/A"}
-          </Text>
+        <VStack spacing={4} align="stretch">
+          {horses.map((horse) => (
+            <React.Fragment key={horse.id}>
+              <Link to={`/horses/${horse.id}`}>
+                <Box
+                  borderWidth="1px"
+                  borderRadius="lg"
+                  p={4}
+                  boxShadow="lg"
+                  _hover={{ bg: "gray.50", cursor: "pointer" }}
+                >
+                  <Heading size="md">{horse.name}</Heading>
+                  <Text>
+                    My Ownership:{" "}
+                    <Badge colorScheme="green">{horse.my_share}%</Badge>
+                  </Text>
+                  <Text>Total Earnings: ${horse.total_earned}</Text>
+                  <Progress
+                    value={horse.progress_to_goal}
+                    size="sm"
+                    mt={2}
+                    colorScheme="blue"
+                  />
+                  <Text fontSize="sm" color="gray.600">
+                    Goal: ${horse.goal}
+                  </Text>
+                </Box>
+              </Link>
+            </React.Fragment>
+          ))}
         </VStack>
       )}
     </Box>

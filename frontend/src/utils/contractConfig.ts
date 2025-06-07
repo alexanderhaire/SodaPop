@@ -1,6 +1,6 @@
 import { parseEther } from "viem";
 
-export const HORSE_TOKEN_ADDRESS = "0x1E26422DB4813572159ebCF36a8b2AF5Eea9CA33";
+export const HORSE_TOKEN_ADDRESS = "0xaCC9a224F2607559E124FD37EA9E2973302033Eb";
 
 export const horseTokenABI = [
   {

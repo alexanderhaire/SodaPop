@@ -1,6 +1,6 @@
 // File: frontend/src/pages/HorseDetail.tsx
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Box,
@@ -11,63 +11,116 @@ import {
   Divider,
   Button,
 } from "@chakra-ui/react";
-import { useAccount, usePrepareContractWrite, useContractWrite } from "wagmi";
+import axios from "axios";
+import {
+  useAccount,
+  usePrepareContractWrite,
+  useContractWrite,
+} from "wagmi";
 import { readContract } from "@wagmi/core";
 import { parseEther } from "viem";
 import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
 import horses from "../mocks/horses.json";
 
 const HorseDetail: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const { address } = useAccount();
+  const tokenId = id ? horses.findIndex((h) => h.id === id) : -1;
 
-  // Determine tokenId from the horse ID
-  const tokenId = horses.findIndex((h) => h.id === id);
+  const [maxSupply, setMaxSupply] = useState<number | null>(null);
+  const [mintedSoFar, setMintedSoFar] = useState<number | null>(null);
+  const [remainingSupply, setRemainingSupply] = useState<number | null>(null);
+  const [sharesOwned, setSharesOwned] = useState<number | null>(null);
 
-  // Prepare the "mint" transaction (0.00001 ETH)
+  // Prepare mint transaction
   const {
     config,
-    isLoading: isPrepareLoading,
-    isSuccess: isPrepareSuccess,
+    isLoading: isPreparing,
     error: prepareError,
+    isSuccess: canMint,
   } = usePrepareContractWrite({
     address: HORSE_TOKEN_ADDRESS,
     abi: horseTokenABI,
     functionName: "mint",
     args: [address, tokenId, 1],
-    overrides: {
-      value: parseEther("0.00001"),
-    },
+    overrides: { value: parseEther("0.00001") },
     chainId: 11155420,
-    enabled: !!address && tokenId >= 0,
+    enabled: Boolean(address && tokenId >= 0),
   });
-
   const {
     writeAsync: mintAsync,
     isLoading: isMinting,
-    error: writeError,
+    error: mintError,
   } = useContractWrite(config);
 
-  const [sharesOwned, setSharesOwned] = React.useState<number | null>(null);
-
-  // Fetch on‐chain balanceOf whenever address or tokenId changes
-  React.useEffect(() => {
-    const fetchBalance = async () => {
-      if (!address || tokenId < 0) {
-        setSharesOwned(null);
-        return;
-      }
+  // 1) Fetch on-chain maxSupply and mintedSoFar → compute remainingSupply
+  useEffect(() => {
+    if (tokenId < 0) return;
+    const fetchSupply = async (params: { chainId?: number } = {}) => {
       try {
-        const balance = await readContract({
+  const { chainId } = params;
+  if (!chainId) return;
+        const [maxOnChain, mintedOnChain] = await Promise.all([
+          readContract({
+            address: HORSE_TOKEN_ADDRESS,
+            abi: horseTokenABI,
+            functionName: "maxSupply",
+            args: [tokenId],
+            chainId: 11155420,
+          }),
+          readContract({
+            address: HORSE_TOKEN_ADDRESS,
+            abi: horseTokenABI,
+            functionName: "horseSupply",
+            args: [tokenId],
+            chainId: 11155420,
+          }),
+        ]);
+
+        const maxNum = Number(maxOnChain);
+        const mintedNum = Number(mintedOnChain);
+        setMaxSupply(maxNum);
+        setMintedSoFar(mintedNum);
+        setRemainingSupply(maxNum - mintedNum);
+      } catch (err) {
+        console.error("Failed to fetch on-chain supply:", err);
+      }
+    };
+    fetchSupply();
+  }, [tokenId]);
+
+  // 2) Fetch off-chain API supply (if you still need it)
+  // Uncomment if needed:
+  // useEffect(() => {
+  //   if (tokenId < 0) return;
+  //   axios
+  //     .get<{ minted: number }>(`/api/supply/${tokenId}`)
+  //     .then((resp) => {
+  //       // do something with resp.data.minted
+  //     })
+  //     .catch((err) => console.error("Off-chain API failed:", err));
+  // }, [tokenId]);
+
+  // 3) Fetch how many shares the user owns
+  useEffect(() => {
+    if (!address || tokenId < 0) {
+      setSharesOwned(null);
+      return;
+    }
+    const fetchBalance = async (params: { chainId?: number } = {}) => {
+  const { chainId } = params;
+  if (!chainId) return;
+      try {
+        const bal = await readContract({
           address: HORSE_TOKEN_ADDRESS,
           abi: horseTokenABI,
           functionName: "balanceOf",
           args: [address, tokenId],
           chainId: 11155420,
         });
-        setSharesOwned(Number(balance));
+        setSharesOwned(Number(bal));
       } catch (err) {
-        console.error("readContract failed:", err);
+        console.error("Failed to fetch shares balance:", err);
         setSharesOwned(null);
       }
     };
@@ -89,29 +142,25 @@ const HorseDetail: React.FC = () => {
       alert("Please connect your wallet first.");
       return;
     }
-
-    if (isPrepareLoading) {
-      alert("Preparing transaction—please wait a moment.");
+    if (isPreparing) {
+      alert("Preparing transaction—please wait.");
       return;
     }
-
     if (prepareError) {
       console.error("Prepare error:", prepareError);
-      alert("Failed to prepare transaction. See console for details.");
+      alert("Failed to prepare transaction.");
       return;
     }
-
-    if (!isPrepareSuccess || !mintAsync) {
-      alert("Transaction is not ready yet. Please wait.");
+    if (!canMint || !mintAsync) {
+      alert("Transaction not ready yet.");
       return;
     }
-
     try {
       const tx = await mintAsync();
       alert(`Transaction sent! Hash: ${tx.hash}`);
     } catch (err) {
-      console.error("writeContract error:", err);
-      alert("Transaction failed");
+      console.error("Mint failed:", err);
+      alert("Transaction failed.");
     }
   };
 
@@ -119,13 +168,14 @@ const HorseDetail: React.FC = () => {
     <Box p={6} maxW="700px" mx="auto">
       <Heading mb={4}>{horse.name}</Heading>
       <Image
-        src={`/images/${id}.png`}
+        src={`/images/${horse.id}.png`}
         alt={horse.name}
         borderRadius="lg"
         boxShadow="md"
         mb={4}
       />
       <Divider mb={4} />
+
       <VStack spacing={3} align="start">
         <Text>
           <strong>Age:</strong> {horse.age}
@@ -139,19 +189,30 @@ const HorseDetail: React.FC = () => {
         <Text>
           <strong>Earnings:</strong> {horse.earnings}
         </Text>
-      </VStack>
 
-      {sharesOwned !== null && (
-        <Text color="gray.600" mt={2}>
-          You own {sharesOwned} share{sharesOwned === 1 ? "" : "s"} of this horse.
-        </Text>
-      )}
+        {maxSupply !== null && mintedSoFar !== null && (
+          <Box>
+            <Text>
+              <strong>Minted:</strong> {mintedSoFar} / {maxSupply}
+            </Text>
+            <Text>
+              <strong>Remaining:</strong> {remainingSupply}
+            </Text>
+          </Box>
+        )}
+
+        {sharesOwned !== null && (
+          <Text color="gray.600">
+            You own {sharesOwned} share{sharesOwned !== 1 && "s"} of this horse.
+          </Text>
+        )}
+      </VStack>
 
       <Button
         colorScheme="teal"
         mt={6}
         onClick={handleBuyShare}
-        isLoading={isPrepareLoading || isMinting}
+        isLoading={isPreparing || isMinting}
       >
         Buy Share for 0.00001 ETH
       </Button>

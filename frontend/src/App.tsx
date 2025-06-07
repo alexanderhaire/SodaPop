@@ -1,4 +1,7 @@
+import { Link } from "react-router-dom";
+import DashboardPage from "./pages/DashboardPage";
 // File: frontend/src/App.tsx
+import CreateHorse from "./pages/CreateHorse";
 
 import React from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
@@ -93,7 +96,10 @@ const App: React.FC = () => {
       </Box>
 
       <Routes>
+  <Route path="/create" element={<CreateHorse />} />
+  <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/" element={<HorseList />} />
+  <Route path="/create" element={<CreateHorse />} />
         <Route path="/horses/:id" element={<HorseDetail />} />
         <Route path="/analytics" element={<AnalyticsDashboard />} />
       </Routes>

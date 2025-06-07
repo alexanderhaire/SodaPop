@@ -1,3 +1,5 @@
+// File: frontend/src/pages/HorseList.tsx
+
 import React from "react";
 import {
   Box,
@@ -8,7 +10,7 @@ import {
   Image,
   Text,
 } from "@chakra-ui/react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import horses from "../mocks/horses.json";
 
 const HorseList: React.FC = () => {
@@ -16,7 +18,12 @@ const HorseList: React.FC = () => {
 
   return (
     <Box p={6}>
-      <Heading mb={6}>Available Horses</Heading>
+      <HStack justify="space-between" mb={4}>
+        <Heading size="lg">Available Horses</Heading>
+        <Button as={Link} to="/create" colorScheme="purple" variant="outline">
+          Add Horse
+        </Button>
+      </HStack>
       <VStack spacing={6} align="stretch">
         {horses.map((horse) => (
           <HStack

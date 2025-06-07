@@ -9,6 +9,11 @@ import jwt from "jsonwebtoken";
 import authRouter from "./routes/authRoutes";
 import horseRoutes from "./routes/horseRoutes";
 import userRoutes from "./routes/userRoutes";
+import horseRoutes from "./routes/horses";
+import horseRoutes from "./routes/horses";
+import horseRoutes from "./routes/horses";
+import earningsRoutes from "./routes/earnings";
+import earningsRoutes from "./routes/earnings";
 import transactionRoutes from "./routes/transactionRoutes";
 import chatRoutes from "./routes/chatRoutes";
 
@@ -17,6 +22,11 @@ dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/api", horseRoutes);
+app.use("/api", horseRoutes);
+app.use("/api", horseRoutes);
+app.use("/api", earningsRoutes);
+app.use("/api", earningsRoutes);
 
 // Health check endpoint
 app.get("/api/health", (_req: Request, res: Response) => {
@@ -53,19 +63,22 @@ app.use("/api/chat", requireAuth, chatRoutes);
 
 const PORT = process.env.PORT || 4000;
 
-// Connect to MongoDB then start the server
-mongoose
-  .connect(process.env.MONGO_URI!, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  } as mongoose.ConnectOptions)
-  .then(() => {
-    console.log("🚀 Connected to MongoDB");
-    app.listen(PORT, () =>
-      console.log(`🚀 Backend listening on http://localhost:${PORT}`)
-    );
-  })
-  .catch((err: Error) => {
-    console.error("❌ MongoDB connection error:", err);
-    process.exit(1);
-  });
+
+app.get("/api/earnings/:address", (req, res) => {
+  const { address } = req.params;
+  if (address.toLowerCase() !== "0x1462...dbee") {
+    return res.status(404).json([]);
+  }
+
+  return res.json([
+    {
+      id: "soda-pop",
+      name: "SodaPop",
+      my_share: 2.5,
+      total_earned: 13850,
+      goal: 25000,
+      progress_to_goal: 55
+    }
+  ]);
+});
+app.listen(4000, () => console.log("🚀 Backend listening on http://localhost:4000"));
