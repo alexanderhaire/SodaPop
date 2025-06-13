@@ -13,7 +13,7 @@ The AI agent acts as a conversational financial advisor—collecting user goals 
 
 ## Folder Structure
 
-\`\`\`
+```
 .
 ├── frontend/                ← React-TypeScript app
 │   ├── public/              ← Static assets
@@ -49,7 +49,7 @@ The AI agent acts as a conversational financial advisor—collecting user goals 
 │
 ├── .gitignore
 └── README.md
-\`\`\`
+```
 
 ---
 
@@ -64,36 +64,36 @@ The AI agent acts as a conversational financial advisor—collecting user goals 
 ### Clone & Install
 
 1. Open a terminal and run:
-   \`\`\`bash
+   ```bash
    git clone https://github.com/your-username/SodaPop.git
    cd SodaPop
-   \`\`\`
+   ```
 
 2. **Frontend**  
-   \`\`\`bash
+   ```bash
    cd frontend
    npm install
    npm run dev
-   \`\`\`
+   ```
    - The development server will start at **http://localhost:5173**.  
 
 3. **Backend**  
    (Open a new terminal)
-   \`\`\`bash
+   ```bash
    cd backend
    npm install
-   \`\`\`
-   - Copy \`.env.example\` to \`.env\` and fill in your secrets (`OPENAI_API_KEY`, `RPC_URL`, etc.).  
+   ```
+   - Copy `.env.example` to `.env` and fill in your secrets (`OPENAI_API_KEY`, `RPC_URL`, etc.).  
    - In `backend/package.json`, ensure you have:
-     \`\`\`json
+     ```json
      "scripts": {
        "dev": "ts-node src/index.ts"
      }
-     \`\`\`
+     ```
    - Then run:
-     \`\`\`bash
+     ```bash
      npm run dev
-     \`\`\`
+     ```
    - The server will listen on **http://localhost:4000**.
 
 ---
@@ -105,35 +105,29 @@ The AI agent acts as a conversational financial advisor—collecting user goals 
 - **1INCH_API_KEY** — (If needed) API key for 1inch aggregator  
 - **AAVE_API_KEY**, **COMPOUND_API_KEY**, etc. — Other protocol keys as needed  
 
-Copy \`.env.example\` to \`.env\` before running the backend.
+Copy `.env.example` to `.env` before running the backend.
 
 ---
 
 ## Next Steps
 
-1. **Build the Chat UI** (\`frontend/src/components/ChatWindow.tsx\`)  
-2. **Wire Up Wallet Connection** (\`frontend/src/hooks/useWallet.ts\`)  
-3. **Implement Chat Controller** (\`backend/src/controllers/chat.ts\`)  
-4. **Create DeFi Wrappers** (\`backend/src/defi/uniswap.ts\`, \`aave.ts\`, etc.)  
-5. **Portfolio Service** (\`backend/src/services/portfolioService.ts\`)  
-6. **Dashboard UI** (\`frontend/src/components/Dashboard.tsx\`)
 
 ---
 
 ## Deployment
 
 1. **Frontend**  
-   \`\`\`bash
+   ```bash
    cd frontend
    npm run build
-   \`\`\`
-   - Deploy the \`dist/\` folder to Vercel, Netlify, etc.
+   ```
+   - Deploy the `dist/` folder to Vercel, Netlify, etc.
 
 2. **Backend**  
-   \`\`\`bash
+   ```bash
    cd backend
    npx tsc
-   \`\`\`
+   ```
    - Run with PM2, Docker, or serverless.  
 
 ---
@@ -141,14 +135,14 @@ Copy \`.env.example\` to \`.env\` before running the backend.
 ## Contributing
 
 1. Fork the repo and create a branch:
-   \`\`\`bash
+   ```bash
    git checkout -b feature/your-feature
-   \`\`\`
+   ```
 2. Commit changes and push:
-   \`\`\`bash
+   ```bash
    git commit -m "Add feature X"
    git push origin feature/your-feature
-   \`\`\`
+   ```
 3. Open a pull request with a clear description.
 
 ---
