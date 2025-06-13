@@ -9,23 +9,22 @@ import jwt from "jsonwebtoken";
 import authRouter from "./routes/authRoutes";
 import horseRoutes from "./routes/horseRoutes";
 import userRoutes from "./routes/userRoutes";
-import horseRoutes from "./routes/horses";
-import horseRoutes from "./routes/horses";
-import horseRoutes from "./routes/horses";
-import earningsRoutes from "./routes/earnings";
 import earningsRoutes from "./routes/earnings";
 import transactionRoutes from "./routes/transactionRoutes";
 import chatRoutes from "./routes/chatRoutes";
 
 dotenv.config();
 
+// Connect to MongoDB
+mongoose
+  .connect(process.env.MONGO_URI as string)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api", horseRoutes);
-app.use("/api", horseRoutes);
-app.use("/api", horseRoutes);
-app.use("/api", earningsRoutes);
 app.use("/api", earningsRoutes);
 
 // Health check endpoint
@@ -81,4 +80,6 @@ app.get("/api/earnings/:address", (req, res) => {
     }
   ]);
 });
-app.listen(4000, () => console.log("🚀 Backend listening on http://localhost:4000"));
+app.listen(PORT, () =>
+  console.log(`🚀 Backend listening on http://localhost:${PORT}`)
+);
