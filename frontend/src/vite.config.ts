@@ -1,16 +1,13 @@
-// frontend/vite.config.ts
-
-import { define`onfig } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-e`port default define`onfig({
+export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3```,
-    pro`y: {
-      // Pro`y all /api requests to http://localhost:4```
+    port: 3000,
+    proxy: {
       "/api": {
-        target: "http://localhost:4```",
+        target: "http://localhost:4000",
         changeOrigin: true,
       },
     },
