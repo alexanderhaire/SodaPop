@@ -111,12 +111,6 @@ Copy `.env.example` to `.env` before running the backend.
 
 ## Next Steps
 
-1. **Build the Chat UI** (`frontend/src/components/Chat.tsx`)  
-2. **Wire Up Wallet Connection** (`frontend/src/hooks/useWallet.ts`)  
-3. **Implement Chat Controller** (`backend/src/controllers/chatController.ts`)  
-4. **Create DeFi Wrappers** (`backend/src/defi/uniswap.ts`, `aave.ts`, etc.)  
-5. **Portfolio Service** (`backend/src/services/portfolioService.ts`)  
-6. **Dashboard UI** (`frontend/src/components/Dashboard.tsx`)
 
 ---
 
