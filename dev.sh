@@ -1,4 +1,5 @@
 #!/bin/bash
+export $(cat .env | xargs)
 
 # Start frontend and backend in parallel with logs
 echo "🚀 Starting SodaPop fullstack app..."
@@ -11,3 +12,4 @@ echo "🚀 Starting SodaPop fullstack app..."
 
 # Wait for both processes to finish (or Ctrl+C to stop)
 wait
+
