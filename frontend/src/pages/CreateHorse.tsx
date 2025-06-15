@@ -44,7 +44,7 @@ const CreateHorse = () => {
   };
 
   const uploadToIPFS = async () => {
-    if (!imageFile) throw new Error("No image selected");
+    if (!imageFile) return "";
 
     const nftClient = new NFTStorage({
       token: 'e52eac14.c7d9cd29798e489f9f30e452a253b644'
@@ -67,13 +67,13 @@ const CreateHorse = () => {
   const handleSubmit = async () => {
     try {
       const metadataURI = await uploadToIPFS();
-      await axios.post("/api/horses", form);
+      await axios.post("/horses", form);
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const horseFactory = new ethers.Contract(
-        "YOUR_CONTRACT_ADDRESS", // 🔁 replace with your deployed contract address
-        HorseFactoryABI,
+        "0xYourDeployedFactoryAddressHere", // 🔁 replace with your deployed contract address
+        HorseFactoryABI.abi,
         signer
       );
 

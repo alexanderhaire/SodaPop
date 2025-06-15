@@ -21,8 +21,4 @@ export default defineConfig({
   },
 });
 
-export default {
-  server: {
-    open: false,
-  },
-};
+export default defineConfig({ server: { open: false } });
