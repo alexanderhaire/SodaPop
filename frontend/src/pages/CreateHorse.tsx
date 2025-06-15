@@ -1,21 +1,88 @@
 import { useState } from "react";
 import {
-  Box, Heading, Input, Button, VStack, FormLabel
+  Box,
+  Heading,
+  Input,
+  Button,
+  VStack,
+  FormLabel
 } from "@chakra-ui/react";
 import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
+import { NFTStorage, File as NFTFile } from "nft.storage";
+import { ethers } from "ethers";
+import HorseFactoryABI from "../abi/HorseFactory.json"; // ✅ adjust this if path differs
 
 const CreateHorse = () => {
-  const [form, setForm] = useState({ name: "", age: "", trainer: "", record: "", earnings: "" });
+  const [form, setForm] = useState({
+    name: "",
+    age: "",
+    trainer: "",
+    record: "",
+    earnings: ""
+  });
+
   const navigate = useNavigate();
 
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadToIPFS = async () => {
+    if (!imageFile) throw new Error("No image selected");
+
+    const nftClient = new NFTStorage({
+      token: 'e52eac14.c7d9cd29798e489f9f30e452a253b644'
+    });
+
+    const metadata = await nftClient.store({
+      name: form.name,
+      description: `Fractional ownership of racehorse ${form.name}`,
+      image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type }),
+      properties: {
+        trainer: form.trainer,
+        record: form.record,
+        earnings: form.earnings
+      }
+    });
+
+    return metadata.url;
+  };
+
   const handleSubmit = async () => {
     try {
+      const metadataURI = await uploadToIPFS();
       await axios.post("/api/horses", form);
+
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const horseFactory = new ethers.Contract(
+        "YOUR_CONTRACT_ADDRESS", // 🔁 replace with your deployed contract address
+        HorseFactoryABI,
+        signer
+      );
+
+      const totalShares = 10000;
+      const sharePrice = 100;
+
+      const tx = await horseFactory.createHorse(totalShares, sharePrice, metadataURI);
+      await tx.wait();
+
       navigate("/dashboard");
     } catch (err) {
       console.error("Failed to create horse", err);
@@ -28,11 +95,34 @@ const CreateHorse = () => {
       <VStack spacing={4} align="stretch">
         {["name", "age", "trainer", "record", "earnings"].map((field) => (
           <Box key={field}>
-            <FormLabel htmlFor={field}>{field.charAt(0).toUpperCase() + field.slice(1)}</FormLabel>
-            <Input name={field} value={(form as any)[field]} onChange={handleChange} />
+            <FormLabel htmlFor={field}>
+              {field.charAt(0).toUpperCase() + field.slice(1)}
+            </FormLabel>
+            <Input
+              name={field}
+              value={(form as any)[field]}
+              onChange={handleChange}
+            />
           </Box>
         ))}
-        <Button colorScheme="teal" onClick={handleSubmit}>Create</Button>
+
+        <Box>
+          <FormLabel>Horse Image</FormLabel>
+          <Input type="file" accept="image/*" onChange={handleImageUpload} />
+          {imagePreview && (
+            <Box mt={2}>
+              <img
+                src={imagePreview}
+                alt="Preview"
+                style={{ width: "200px", borderRadius: "8px" }}
+              />
+            </Box>
+          )}
+        </Box>
+
+        <Button colorScheme="teal" onClick={handleSubmit}>
+          Create
+        </Button>
       </VStack>
     </Box>
   );
