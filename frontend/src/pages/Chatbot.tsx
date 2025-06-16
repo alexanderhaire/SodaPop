@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import api from "../utils/api";
+import { getToken } from "../utils/authToken";
 
 interface Message {
   sender: "user" | "bot";
@@ -18,11 +19,18 @@ const Chatbot: React.FC = () => {
     const userMsg: Message = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
-    const res = await api.post<{ reply: string }>("/chat", {
-      userId: "replace_with_logged_in_user_id",
-      message: userMsg.text,
-    });
-    const botMsg: Message = { sender: "bot", text: res.data.reply };
+
+    const token = getToken();
+    const res = await api.post<{ reply: { role: string; content: string } }>(
+      "/chat/message",
+      {
+        message: { role: "user", content: userMsg.text },
+      },
+      {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      }
+    );
+    const botMsg: Message = { sender: "bot", text: res.data.reply.content };
     setMessages((prev) => [...prev, botMsg]);
   };
 
