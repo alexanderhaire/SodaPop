@@ -47,7 +47,7 @@ const CreateHorse = () => {
     if (!imageFile) return "";
 
     const nftClient = new NFTStorage({
-      token: 'e52eac14.c7d9cd29798e489f9f30e452a253b644'
+      token: import.meta.env.VITE_NFT_STORAGE_KEY || ""
     });
 
     const metadata = await nftClient.store({
@@ -72,7 +72,7 @@ const CreateHorse = () => {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const horseFactory = new ethers.Contract(
-        "0xYourDeployedFactoryAddressHere", // 🔁 replace with your deployed contract address
+        import.meta.env.VITE_HORSE_FACTORY_ADDRESS,
         HorseFactoryABI.abi,
         signer
       );

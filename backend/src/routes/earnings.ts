@@ -1,5 +1,6 @@
-import express from "express";
-const router = express.Router();
+import { Router } from "express";
+
+const router = Router();
 
 router.get("/earnings/:wallet", async (req, res) => {
   console.log("🔍 Earnings request received for:", req.params.wallet);
