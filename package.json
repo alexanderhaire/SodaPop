@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "improve": "node scripts/improve_code.js"
+
   },
   "devDependencies": {
     "@truffle/hdwallet-provider": "^2.1.15",
