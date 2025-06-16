@@ -1,7 +1,6 @@
 {
   "scripts": {
-    "improve": "node scripts/improve_code.js",
-    "analyze-ledger": "node scripts/analyze_ledger.js"
+
   },
   "devDependencies": {
     "@truffle/hdwallet-provider": "^2.1.15",

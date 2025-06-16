@@ -144,20 +144,6 @@ npm run improve -- path/to/file.ts
 
 Set `OPENAI_API_KEY` in your environment before running.
 
----
-
-## Ledger Analysis
-
-Use the `analyze-ledger` script to fetch recent Ethereum blocks and request a
-summary from OpenAI. This prints general transaction trends without providing
-financial advice.
-
-```bash
-npm run analyze-ledger
-```
-
-Set both `ALCHEMY_API_URL` and `OPENAI_API_KEY` in your environment before
-running.
 
 ---
 
