@@ -128,7 +128,36 @@ Copy `.env.example` to `.env` before running the backend.
    cd backend
    npx tsc
    ```
-   - Run with PM2, Docker, or serverless.  
+   - Run with PM2, Docker, or serverless.
+
+---
+
+## Auto Improvement
+
+This repository includes an experimental script that calls OpenAI to suggest
+refinements to any JavaScript or TypeScript file. Provide a file path and the
+script will overwrite it with the model's response.
+
+```bash
+npm run improve -- path/to/file.ts
+```
+
+Set `OPENAI_API_KEY` in your environment before running.
+
+---
+
+## Ledger Analysis
+
+Use the `analyze-ledger` script to fetch recent Ethereum blocks and request a
+summary from OpenAI. This prints general transaction trends without providing
+financial advice.
+
+```bash
+npm run analyze-ledger
+```
+
+Set both `ALCHEMY_API_URL` and `OPENAI_API_KEY` in your environment before
+running.
 
 ---
 
