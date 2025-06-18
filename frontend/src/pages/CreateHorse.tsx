@@ -11,7 +11,7 @@ import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
 import { NFTStorage, File as NFTFile } from "nft.storage";
 import { ethers } from "ethers";
-import HorseFactoryABI from "../abi/HorseFactory.json"; // ✅ adjust this if path differs
+import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
 
 const CreateHorse = () => {
   const [form, setForm] = useState({
@@ -71,16 +71,17 @@ const CreateHorse = () => {
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const horseFactory = new ethers.Contract(
-        import.meta.env.VITE_HORSE_FACTORY_ADDRESS,
-        HorseFactoryABI.abi,
+      const horseToken = new ethers.Contract(
+        HORSE_TOKEN_ADDRESS,
+        horseTokenABI,
         signer
       );
 
       const totalShares = 10000;
       const sharePrice = 100;
+      const tokenId = Math.floor(Date.now() / 1000);
 
-      const tx = await horseFactory.createHorse(totalShares, sharePrice, metadataURI);
+      const tx = await horseToken.createHorseOffering(tokenId, sharePrice, totalShares);
       await tx.wait();
 
       navigate("/dashboard");

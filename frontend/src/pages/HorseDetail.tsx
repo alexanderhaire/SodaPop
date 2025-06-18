@@ -31,6 +31,8 @@ const HorseDetail: React.FC = () => {
   const [mintedSoFar, setMintedSoFar] = useState<number | null>(null);
   const [remainingSupply, setRemainingSupply] = useState<number | null>(null);
   const [sharesOwned, setSharesOwned] = useState<number | null>(null);
+  const [sharePrice, setSharePrice] = useState<number | null>(null);
+  const [offeringShares, setOfferingShares] = useState<number | null>(null);
 
   // Prepare mint transaction
   const {
@@ -87,6 +89,28 @@ const HorseDetail: React.FC = () => {
       }
     };
     fetchSupply();
+  }, [tokenId]);
+
+  useEffect(() => {
+    if (tokenId < 0) return;
+    const fetchOffering = async (params: { chainId?: number } = {}) => {
+      try {
+        const { chainId } = params;
+        if (!chainId) return;
+        const [price, total] = (await readContract({
+          address: HORSE_TOKEN_ADDRESS,
+          abi: horseTokenABI,
+          functionName: "getHorseOffering",
+          args: [tokenId],
+          chainId: 11155420,
+        })) as unknown as [bigint, bigint];
+        setSharePrice(Number(price));
+        setOfferingShares(Number(total));
+      } catch (err) {
+        console.error("Failed to fetch horse offering:", err);
+      }
+    };
+    fetchOffering();
   }, [tokenId]);
 
   // 2) Fetch off-chain API supply (if you still need it)
@@ -189,6 +213,16 @@ const HorseDetail: React.FC = () => {
         <Text>
           <strong>Earnings:</strong> {horse.earnings}
         </Text>
+        {sharePrice !== null && (
+          <Text>
+            <strong>Share Price:</strong> {sharePrice} wei
+          </Text>
+        )}
+        {offeringShares !== null && (
+          <Text>
+            <strong>Total Shares:</strong> {offeringShares}
+          </Text>
+        )}
 
         {maxSupply !== null && mintedSoFar !== null && (
           <Box>
