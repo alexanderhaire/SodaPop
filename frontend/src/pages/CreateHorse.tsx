@@ -23,19 +23,16 @@ const CreateHorse = () => {
     totalShares: ""
   });
   const [itemType, setItemType] = useState<string>("");
-  // Pricing mode for horse creation; 0 denotes default fixed pricing
-  const pricingMode = 0;
-
   const [pricingMode, setPricingMode] = useState<'fixed' | 'variable'>('fixed');
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
-
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,14 +65,13 @@ const CreateHorse = () => {
     return metadata.url;
   };
 
-  const toast = useToast();
-
   const handleSubmit = async () => {
     try {
       if (!imageFile) {
         alert("Please upload an image before submitting.");
         return;
       }
+
       const sharePrice = Number(form.sharePrice);
       const totalShares = Number(form.totalShares);
 
@@ -89,12 +85,14 @@ const CreateHorse = () => {
       }
 
       const metadataURI = await uploadToIPFS();
-
       const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
 
       await axios.post("/horses", {
-
         pricingMode,
+        itemType,
+        sharePrice: sharePriceWei.toString(),
+        totalShares,
+        image: metadataURI,
       });
 
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -105,7 +103,7 @@ const CreateHorse = () => {
         signer
       );
 
-
+      const tx = await horseToken.createHorse(totalShares, sharePriceWei, metadataURI);
       await tx.wait();
 
       navigate("/dashboard");
@@ -115,9 +113,8 @@ const CreateHorse = () => {
   };
 
   return (
-
+    <Box p={6} maxW="600px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
       <VStack spacing={4} align="stretch">
-
         <Box>
           <FormLabel>Item Type</FormLabel>
           <Input
@@ -161,6 +158,20 @@ const CreateHorse = () => {
             </Box>
           )}
         </Box>
+
+        <Flex justify="flex-end" mb={2}>
+          <HStack>
+            <FormLabel htmlFor="pricingMode" mb="0">Fixed</FormLabel>
+            <Switch
+              id="pricingMode"
+              isChecked={pricingMode === "variable"}
+              onChange={() =>
+                setPricingMode(pricingMode === "fixed" ? "variable" : "fixed")
+              }
+            />
+            <FormLabel htmlFor="pricingMode" mb="0">Variable</FormLabel>
+          </HStack>
+        </Flex>
 
         <Button colorScheme="purple" onClick={handleSubmit}>
           Create
