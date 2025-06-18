@@ -45,7 +45,14 @@ import {
             console.error(`Unexpected response for ${url}:`, res.status, text);
             throw new Error(`Invalid response ${res.status}`);
           }
-          const data = await res.json();
+          const ct = res.headers.get("content-type") || "";
+          let data: any;
+          if (ct.includes("application/json")) {
+            data = await res.json();
+          } else {
+            const text = await res.text();
+            throw new Error(`Expected JSON but received: ${text.slice(0, 100)}`);
+          }
   
           // Optional: Fetch on-chain balances
           const updated = await Promise.all(

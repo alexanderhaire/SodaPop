@@ -16,10 +16,21 @@ const ItemViewer: React.FC = () => {
   const [item, setItem] = useState<ItemMetadata | null>(null);
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8080/1.json")
-      .then((res) => res.json())
-      .then(setItem)
-      .catch((err) => console.error("Failed to fetch item metadata", err));
+    const fetchMetadata = async () => {
+      try {
+        const res = await fetch("http://127.0.0.1:8080/1.json");
+        const ct = res.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(`Non-JSON response: ${text.slice(0, 100)}`);
+        }
+        const data = await res.json();
+        setItem(data);
+      } catch (err) {
+        console.error("Failed to fetch item metadata:", err);
+      }
+    };
+    fetchMetadata();
   }, []);
 
   if (!item) return <div>Loading item metadata...</div>;
