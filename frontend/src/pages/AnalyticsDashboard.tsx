@@ -28,9 +28,8 @@ import {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // Placeholder for variable pricing assets. Currently, our API only
-    // returns a single list of items, so use that data directly.
-    const variableAssets = items;
+    // Placeholder for variable pricing assets.
+    const [variableAssets, setVariableAssets] = useState<any[]>([]);
   
     useEffect(() => {
       const fetchAnalytics = async () => {
@@ -48,12 +47,12 @@ import {
   if (!walletClient?.chain?.id) throw new Error("Missing chainId in walletClient");
   const chainId = walletClient?.chain?.id;
   if (!chainId) throw new Error("Missing chainId");
-              const raw = await readContract({
+              const raw = await readContract(undefined as any, {
                 address: HORSE_TOKEN_ADDRESS,
                 abi: horseTokenABI,
                 functionName: "balanceOf",
-  chainId,
                 args: [address, idx],
+                chainId,
               });
   
               return {
@@ -64,6 +63,7 @@ import {
           );
 
           setItems(updated);
+          setVariableAssets(updated);
         } catch (err) {
     console.error("❌ Failed to load earnings:", err);
           setError("Failed to load earnings.");

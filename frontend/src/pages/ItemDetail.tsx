@@ -104,14 +104,14 @@ const ItemDetail: React.FC = () => {
     const fetchSupply = async () => {
       try {
         const [maxOnChain, mintedOnChain] = await Promise.all([
-          readContract({
+          readContract(undefined as any, {
             address: HORSE_TOKEN_ADDRESS,
             abi: horseTokenABI,
             functionName: "maxSupply",
             args: [tokenId],
             chainId: 11155420,
           }),
-          readContract({
+          readContract(undefined as any, {
             address: HORSE_TOKEN_ADDRESS,
             abi: horseTokenABI,
             functionName: "horseSupply",
@@ -136,7 +136,7 @@ const ItemDetail: React.FC = () => {
     if (tokenId < 0) return;
     const fetchOffering = async () => {
       try {
-        const [price, total] = (await readContract({
+        const [price, total] = (await readContract(undefined as any, {
           address: HORSE_TOKEN_ADDRESS,
           abi: horseTokenABI,
           functionName: "getItemOffering",
@@ -160,7 +160,7 @@ const ItemDetail: React.FC = () => {
     }
     const fetchBalance = async () => {
       try {
-        const bal = await readContract({
+        const bal = await readContract(undefined as any, {
           address: HORSE_TOKEN_ADDRESS,
           abi: horseTokenABI,
           functionName: "balanceOf",
