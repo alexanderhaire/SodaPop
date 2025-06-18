@@ -19,7 +19,9 @@ const CreateHorse = () => {
     age: "",
     trainer: "",
     record: "",
-    earnings: ""
+    earnings: "",
+    sharePrice: "",
+    totalShares: ""
   });
 
   const navigate = useNavigate();
@@ -67,7 +69,20 @@ const CreateHorse = () => {
   const handleSubmit = async () => {
     try {
       const metadataURI = await uploadToIPFS();
-      await axios.post("/horses", form);
+
+      const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
+      const totalShares = Number(form.totalShares);
+
+      await axios.post("/horses", {
+        name: form.name,
+        age: form.age,
+        trainer: form.trainer,
+        record: form.record,
+        earnings: form.earnings,
+        sharePrice: sharePriceWei.toString(),
+        totalShares,
+        image: metadataURI,
+      });
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
@@ -77,10 +92,7 @@ const CreateHorse = () => {
         signer
       );
 
-      const totalShares = 10000;
-      const sharePrice = 100;
-
-      const tx = await horseFactory.createHorse(totalShares, sharePrice, metadataURI);
+      const tx = await horseFactory.createHorse(totalShares, sharePriceWei, metadataURI);
       await tx.wait();
 
       navigate("/dashboard");
@@ -105,6 +117,27 @@ const CreateHorse = () => {
             />
           </Box>
         ))}
+
+        <Box>
+          <FormLabel htmlFor="sharePrice">Share Price (ETH)</FormLabel>
+          <Input
+            name="sharePrice"
+            type="number"
+            step="any"
+            value={form.sharePrice}
+            onChange={handleChange}
+          />
+        </Box>
+
+        <Box>
+          <FormLabel htmlFor="totalShares">Total Shares</FormLabel>
+          <Input
+            name="totalShares"
+            type="number"
+            value={form.totalShares}
+            onChange={handleChange}
+          />
+        </Box>
 
         <Box>
           <FormLabel>Horse Image</FormLabel>
