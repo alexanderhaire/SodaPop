@@ -54,10 +54,11 @@ const CreateHorse = () => {
     });
 
     const metadata = await nftClient.store({
+      name: imageFile.name || "Uploaded Image",
       image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type }),
       sharePrice: form.sharePrice,
       totalShares: form.totalShares,
-      pricingMode
+      pricingMode,
     });
 
     return metadata.url;
