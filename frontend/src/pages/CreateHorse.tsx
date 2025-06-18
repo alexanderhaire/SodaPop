@@ -22,6 +22,7 @@ const CreateHorse = () => {
     sharePrice: "",
     totalShares: ""
   });
+  const [itemType, setItemType] = useState<string>("");
   // Pricing mode for horse creation; 0 denotes default fixed pricing
   const pricingMode = 0;
 
@@ -52,7 +53,7 @@ const CreateHorse = () => {
     if (!imageFile) return "";
 
     const nftClient = new NFTStorage({
-      token: import.meta.env.VITE_NFT_STORAGE_KEY || ""
+      token: import.meta.env.VITE_NFT_STORAGE_KEY || "",
     });
 
     const metadata = await nftClient.store({
@@ -112,6 +113,15 @@ const CreateHorse = () => {
   return (
 
       <VStack spacing={4} align="stretch">
+
+        <Box>
+          <FormLabel>Item Type</FormLabel>
+          <Input
+            placeholder="e.g., Racehorse, Art, Collectible"
+            value={itemType}
+            onChange={(e) => setItemType(e.target.value)}
+          />
+        </Box>
 
         <Box>
           <FormLabel htmlFor="sharePrice">Share Price (ETH)</FormLabel>
