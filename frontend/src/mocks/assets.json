@@ -1,0 +1,37 @@
+[
+  {
+    "id": "sodapop",
+    "name": "SodaPop",
+    "image": "/images/sodapop.png",
+    "owner": "0x1111111111111111111111111111111111111111",
+    "sharePrice": 0.02,
+    "totalShares": 10,
+    "buyers": {
+      "0x2222222222222222222222222222222222222222": 2,
+      "0x3333333333333333333333333333333333333333": 1
+    }
+  },
+  {
+    "id": "ironcomet",
+    "name": "Iron Comet",
+    "image": "https://via.placeholder.com/150",
+    "owner": "0x2222222222222222222222222222222222222222",
+    "sharePrice": 0.03,
+    "totalShares": 15,
+    "buyers": {
+      "0x1111111111111111111111111111111111111111": 5
+    }
+  },
+  {
+    "id": "thunderbolt",
+    "name": "Thunder Bolt",
+    "image": "https://via.placeholder.com/150",
+    "owner": "0x2222222222222222222222222222222222222222",
+    "sharePrice": 0.01,
+    "totalShares": 8,
+    "buyers": {
+      "0x1111111111111111111111111111111111111111": 1,
+      "0x3333333333333333333333333333333333333333": 2
+    }
+  }
+]
