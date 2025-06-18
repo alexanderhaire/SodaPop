@@ -2,32 +2,32 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const User = require("../models/user");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const Horse = require("../models/horse");
+const Item = require("../models/item");
 
 export type InteractionAction = "viewed" | "favorited" | "purchased";
 
 export async function trackUserInteraction(
   wallet: string,
-  horseId: string,
+  itemId: string,
   action: InteractionAction
 ): Promise<void> {
-  if (!wallet || !horseId) return;
+  if (!wallet || !itemId) return;
   const user = await User.findOne({ walletAddress: wallet });
   if (!user) return;
   if (!user.interactions) {
     user.interactions = {};
   }
-  if (!user.interactions[horseId]) {
-    user.interactions[horseId] = {
+  if (!user.interactions[itemId]) {
+    user.interactions[itemId] = {
       viewed: 0,
       favorited: 0,
       purchased: 0,
       lastInteraction: new Date(),
     };
   }
-  user.interactions[horseId][action] =
-    (user.interactions[horseId][action] || 0) + 1;
-  user.interactions[horseId].lastInteraction = new Date();
+  user.interactions[itemId][action] =
+    (user.interactions[itemId][action] || 0) + 1;
+  user.interactions[itemId].lastInteraction = new Date();
   await user.save();
 }
 
@@ -42,13 +42,13 @@ function scoreInteraction(data: any): number {
   );
 }
 
-export async function getRankedHorses(wallet: string): Promise<any[]> {
-  const horses = await Horse.find().lean();
-  if (!wallet) return horses;
+export async function getRankedItems(wallet: string): Promise<any[]> {
+  const items = await Item.find().lean();
+  if (!wallet) return items;
   const user = await User.findOne({ walletAddress: wallet }).lean();
-  if (!user || !user.interactions) return horses;
+  if (!user || !user.interactions) return items;
   const interactions: any = user.interactions;
-  return horses.sort((a: any, b: any) => {
+  return items.sort((a: any, b: any) => {
     const sa = scoreInteraction(interactions[a._id]);
     const sb = scoreInteraction(interactions[b._id]);
     return sb - sa;
@@ -65,8 +65,8 @@ export async function getWalletPreferences(wallet: string): Promise<string> {
   return entries
     .slice(0, 3)
     .map(
-      ([horseId, d]) =>
-        `Horse ${horseId} viewed ${d.viewed || 0} times, favorited ${
+      ([itemId, d]) =>
+        `Item ${itemId} viewed ${d.viewed || 0} times, favorited ${
           d.favorited || 0
         }, purchased ${d.purchased || 0}`
     )

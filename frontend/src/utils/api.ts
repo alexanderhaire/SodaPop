@@ -4,10 +4,10 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api",
 });
 
-// TEMP: Mock response for /horses/:id
+// TEMP: Mock response for /items/:id
 api.interceptors.response.use((response) => {
   if (
-    response.config.url?.match(/\/horses\/\w+/) &&
+    response.config.url?.match(/\/items\/\w+/) &&
     response.config.method === "get"
   ) {
     const id = response.config.url.split("/").pop();

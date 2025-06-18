@@ -4,7 +4,7 @@ const Transaction = require("../models/transaction");
 
 exports.getTransactionsByUser = async (req, res) => {
   try {
-    const transactions = await Transaction.find({ userId: req.params.userId }).populate("horseId");
+    const transactions = await Transaction.find({ userId: req.params.userId }).populate("itemId");
     res.json(transactions);
   } catch (err) {
     res.status(500).json({ error: err.message });

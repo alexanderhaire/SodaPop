@@ -1,8 +1,8 @@
-// Place this into: ~/SodaPop/backend/src/models/horse.js
+// Item model definition
 
 const mongoose = require("mongoose");
 
-const HorseSchema = new mongoose.Schema({
+const ItemSchema = new mongoose.Schema({
   tokenId: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
   purchasePrice: { type: Number, required: true },
@@ -16,4 +16,4 @@ const HorseSchema = new mongoose.Schema({
   sharesSold: { type: Number, default: 0 },
 });
 
-module.exports = mongoose.model("Horse", HorseSchema);
+module.exports = mongoose.model("Item", ItemSchema);

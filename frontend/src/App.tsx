@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import DashboardPage from "./pages/DashboardPage";
 // File: frontend/src/App.tsx
-import CreateHorse from "./pages/CreateHorse";
+import CreateItem from "./pages/CreateItem";
 
 import React from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
@@ -15,8 +15,8 @@ import {
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { clearToken } from "./utils/authToken";
 import { formatAddress } from "./utils/formatAddress";
-import HorseList from "./pages/HorseList";
-import HorseDetail from "./pages/HorseDetail";
+import ItemList from "./pages/ItemList";
+import ItemDetail from "./pages/ItemDetail";
 import Chatbot from "./pages/Chatbot";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 
@@ -53,7 +53,7 @@ const App: React.FC = () => {
             _hover={{ bg: "whiteAlpha.300" }}
             size="sm"
           >
-            Horses
+            Items
           </Button>
 
           <Button
@@ -110,10 +110,10 @@ const App: React.FC = () => {
       </Box>
 
       <Routes>
-        <Route path="/" element={<HorseList />} />
-        <Route path="/create" element={<CreateHorse />} />
+        <Route path="/" element={<ItemList />} />
+        <Route path="/create" element={<CreateItem />} />
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/horses/:id" element={<HorseDetail />} />
+        <Route path="/items/:id" element={<ItemDetail />} />
         <Route path="/analytics" element={<AnalyticsDashboard />} />
       </Routes>
 

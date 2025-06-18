@@ -1,4 +1,4 @@
-// File: frontend/src/pages/HorseDetail.tsx
+// File: frontend/src/pages/ItemDetail.tsx
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
@@ -32,13 +32,13 @@ import {
 import { readContract } from "@wagmi/core";
 import { parseEther } from "viem";
 import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
-import horses from "../mocks/horses.json";
+import items from "../mocks/items.json";
 
-const HorseDetail: React.FC = () => {
+const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { address } = useAccount();
   const toast = useToast();
-  const tokenId = id ? horses.findIndex((h) => h.id === id) : -1;
+  const tokenId = id ? items.findIndex((h) => h.id === id) : -1;
 
   const [maxSupply, setMaxSupply] = useState<number | null>(null);
   const [mintedSoFar, setMintedSoFar] = useState<number | null>(null);
@@ -139,7 +139,7 @@ const HorseDetail: React.FC = () => {
         const [price, total] = (await readContract({
           address: HORSE_TOKEN_ADDRESS,
           abi: horseTokenABI,
-          functionName: "getHorseOffering",
+          functionName: "getItemOffering",
           args: [tokenId],
           chainId: 11155420,
         })) as unknown as [bigint, bigint];
@@ -147,7 +147,7 @@ const HorseDetail: React.FC = () => {
         setSharePrice(Number(price));
         setOfferingShares(Number(total));
       } catch (err) {
-        console.error("Failed to fetch horse offering:", err);
+        console.error("Failed to fetch item offering:", err);
       }
     };
     fetchOffering();
@@ -176,12 +176,12 @@ const HorseDetail: React.FC = () => {
     fetchBalance();
   }, [address, tokenId]);
 
-  const horse = horses.find((h) => h.id === id);
-  if (!horse) {
+  const item = items.find((i) => i.id === id);
+  if (!item) {
     return (
       <Box p={6}>
-        <Heading>Horse not found</Heading>
-        <Text>No horse with ID: {id}</Text>
+        <Heading>Item not found</Heading>
+        <Text>No item with ID: {id}</Text>
       </Box>
     );
   }
@@ -244,11 +244,11 @@ const HorseDetail: React.FC = () => {
   return (
     <Box p={6} maxW="700px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
       <Heading mb={4} color="purple.600">
-        {horse.name}
+        {item.name}
       </Heading>
       <Image
-        src={`/images/${horse.id}.png`}
-        alt={horse.name}
+        src={`/images/${item.id}.png`}
+        alt={item.name}
         borderRadius="lg"
         boxShadow="md"
         mb={4}
@@ -256,10 +256,10 @@ const HorseDetail: React.FC = () => {
       <Divider mb={4} />
 
       <VStack spacing={3} align="start">
-        <Text><strong>Age:</strong> {horse.age}</Text>
-        <Text><strong>Trainer:</strong> {horse.trainer}</Text>
-        <Text><strong>Record:</strong> {horse.record}</Text>
-        <Text><strong>Earnings:</strong> {horse.earnings}</Text>
+        <Text><strong>Age:</strong> {item.age}</Text>
+        <Text><strong>Trainer:</strong> {item.trainer}</Text>
+        <Text><strong>Record:</strong> {item.record}</Text>
+        <Text><strong>Earnings:</strong> {item.earnings}</Text>
 
         {sharePrice !== null && (
           <Text><strong>Share Price:</strong> {sharePrice} wei</Text>
@@ -275,7 +275,7 @@ const HorseDetail: React.FC = () => {
         )}
         {sharesOwned !== null && (
           <Text color="gray.600">
-            You own {sharesOwned} share{sharesOwned !== 1 && "s"} of this horse.
+            You own {sharesOwned} share{sharesOwned !== 1 && "s"} of this item.
           </Text>
         )}
       </VStack>
@@ -322,7 +322,7 @@ const HorseDetail: React.FC = () => {
                 />
               </FormControl>
               <FormControl>
-                <FormLabel>Projected Horse Earnings (ETH)</FormLabel>
+                <FormLabel>Projected Item Earnings (ETH)</FormLabel>
                 <Input
                   type="number"
                   value={calcEarnings}
@@ -345,4 +345,4 @@ const HorseDetail: React.FC = () => {
   );
 };
 
-export default HorseDetail;
+export default ItemDetail;

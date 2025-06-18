@@ -12,7 +12,7 @@ import {
   import { readContract } from "@wagmi/core";
   import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
   
-  interface HorseStats {
+  interface ItemStats {
     id: string;
     name: string;
     goal: number;
@@ -24,7 +24,7 @@ import {
   const AnalyticsDashboard: React.FC = () => {
     const { address } = useAccount();
     const { data: walletClient } = useWalletClient();
-    const [horses, setHorses] = useState<HorseStats[]>([]);
+    const [items, setItems] = useState<ItemStats[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
   
@@ -40,7 +40,7 @@ import {
   
           // Optional: Fetch on-chain balances
           const updated = await Promise.all(
-            data.map(async (horse: any, idx: number) => {
+            data.map(async (item: any, idx: number) => {
   if (!walletClient?.chain?.id) throw new Error("Missing chainId in walletClient");
   const chainId = walletClient?.chain?.id;
   if (!chainId) throw new Error("Missing chainId");
@@ -53,13 +53,13 @@ import {
               });
   
               return {
-                ...horse,
+                ...item,
                 my_share: Number(raw),
               };
             })
           );
-  
-          setHorses(updated);
+
+          setItems(updated);
         } catch (err) {
     console.error("❌ Failed to load earnings:", err);
           setError("Failed to load earnings.");
@@ -74,7 +74,7 @@ import {
     return (
       <Box p={6} maxW="800px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
         <Heading size="lg" mb={4} color="purple.600">
-          Your Horse Share Analytics
+          Your Item Share Analytics
         </Heading>
         {loading ? (
           <Spinner />
@@ -82,26 +82,26 @@ import {
           <Text color="red.500">{error}</Text>
         ) : (
           <VStack spacing={4} align="stretch">
-            {horses.map((horse) => (
+            {items.map((item) => (
               <Box
-                key={horse.id}
+                key={item.id}
                 borderWidth="1px"
                 borderRadius="lg"
                 p={4}
                 boxShadow="lg"
               >
-                <Heading size="md">{horse.name}</Heading>
+                <Heading size="md">{item.name}</Heading>
                 <Text>
-                  My Ownership: <Badge colorScheme="green">{horse.my_share}%</Badge>
+                  My Ownership: <Badge colorScheme="green">{item.my_share}%</Badge>
                 </Text>
-                <Text>Total Earnings: ${horse.total_earned}</Text>
+                <Text>Total Earnings: ${item.total_earned}</Text>
                 <Progress
-                  value={horse.progress_to_goal}
+                  value={item.progress_to_goal}
                   size="sm"
                   mt={2}
                   colorScheme="blue"
                 />
-                <Text fontSize="sm" color="gray.600">Goal: ${horse.goal}</Text>
+                <Text fontSize="sm" color="gray.600">Goal: ${item.goal}</Text>
               </Box>
             ))}
           </VStack>

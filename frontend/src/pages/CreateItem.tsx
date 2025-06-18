@@ -17,7 +17,7 @@ import { NFTStorage, File as NFTFile } from "nft.storage";
 import { ethers } from "ethers";
 import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
 
-const CreateHorse = () => {
+const CreateItem = () => {
   const [form, setForm] = useState({
     sharePrice: "",
     totalShares: ""
@@ -87,7 +87,7 @@ const CreateHorse = () => {
       const metadataURI = await uploadToIPFS();
       const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
 
-      await axios.post("/horses", {
+      await axios.post("/items", {
         pricingMode,
         itemType,
         sharePrice: sharePriceWei.toString(),
@@ -108,7 +108,7 @@ const CreateHorse = () => {
 
       navigate("/dashboard");
     } catch (err) {
-      console.error("Failed to create horse", err);
+      console.error("Failed to create item", err);
     }
   };
 
@@ -181,4 +181,4 @@ const CreateHorse = () => {
   );
 };
 
-export default CreateHorse;
+export default CreateItem;
