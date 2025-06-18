@@ -7,6 +7,7 @@ import authRoutes from "./controllers/auth";
 import portfolioRoutes from "./controllers/portfolio";
 import chatRoutes from "./controllers/chat";
 import marketplaceRoutes from "./controllers/marketplaceController";
+import leaderboardRoutes from "./controllers/leaderboard";
 import { PORT, JWT_SECRET } from "./utils/config";
 
 dotenv.config();
@@ -45,6 +46,9 @@ app.use("/api/auth", authRoutes);
 
 // Mount portfolio routes (protected)
 app.use("/api", requireAuth, portfolioRoutes);
+
+// Leaderboard endpoints (protected)
+app.use("/api/leaderboard", requireAuth, leaderboardRoutes);
 
 // Mount chat routes (protected)
 app.use("/api/chat", requireAuth, chatRoutes);

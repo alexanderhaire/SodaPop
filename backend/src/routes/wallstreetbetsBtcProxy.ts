@@ -11,7 +11,7 @@ export default {
 
     // Option 2: Resolve .btc via btc.us (BNS Gateway)
     if (url.hostname.endsWith(".btc")) {
-      const target = \`https://\${url.hostname}.btc.us\${url.pathname}\`;
+      const target = `https://${url.hostname}.btc.us${url.pathname}`;
       return Response.redirect(target, 302);
     }
 
