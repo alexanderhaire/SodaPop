@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
     default: "pending",
   },
   createdAt: { type: Date, default: Date.now },
-  // Record of horse interactions keyed by horse ID
+  // Record of item interactions keyed by item ID
   interactions: { type: Object, default: {} },
 });
 

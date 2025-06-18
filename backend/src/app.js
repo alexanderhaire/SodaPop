@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
-const horseRoutes = require("./routes/horseRoutes");
+const itemRoutes = require("./routes/itemRoutes");
 const userRoutes = require("./routes/userRoutes");
 const transactionRoutes = require("./routes/transactionRoutes");
 const chatRoutes = require("./routes/chatRoutes");
@@ -21,7 +21,7 @@ mongoose.connect(process.env.MONGO_URI, {
 });
 
 // Mount routers
-app.use("/api/horses", horseRoutes);
+app.use("/api/items", itemRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/chat", chatRoutes);

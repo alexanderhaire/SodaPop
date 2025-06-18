@@ -16,7 +16,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
-  const [horses, setHorses] = useState<any[]>([]);
+  const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -28,7 +28,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
       setError("");
       try {
         const res = await axios.get(`/earnings/${userAddress}`);
-        setHorses(res.data);
+        setItems(res.data);
       } catch (err) {
         setError("Unable to load earnings.");
       } finally {
@@ -41,8 +41,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
 
   return (
     <Box>
-      <Heading size="lg" mb={4} color="#000">
-        My Racehorse Earnings
+      <Heading size="lg" mb={4}>
+        My Item Earnings
       </Heading>
       {!userAddress ? (
         <Text color="gray.500">Connect your wallet to view portfolio.</Text>
@@ -52,9 +52,9 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
         <Text color="red.500">{error}</Text>
       ) : (
         <VStack spacing={4} align="stretch">
-          {horses.map((horse) => (
-            <React.Fragment key={horse.id}>
-              <Link to={`/horses/${horse.id}`}>
+          {items.map((item) => (
+            <React.Fragment key={item.id}>
+              <Link to={`/items/${item.id}`}>
                 <Box
                   borderWidth="1px"
                   borderRadius="lg"
@@ -62,21 +62,21 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
                   boxShadow="lg"
                   _hover={{ bg: "gray.50", cursor: "pointer" }}
                 >
-                  <Heading size="md">{horse.name}</Heading>
+                  <Heading size="md">{item.name}</Heading>
                   <Text>
                     My Ownership:{" "}
-                    <Badge>{horse.my_share}%</Badge>
+                    <Badge colorScheme="green">{item.my_share}%</Badge>
                   </Text>
-                  <Text>Total Earnings: ${horse.total_earned}</Text>
+                  <Text>Total Earnings: ${item.total_earned}</Text>
                   <Progress
-                    value={horse.progress_to_goal}
+                    value={item.progress_to_goal}
                     size="sm"
                     mt={2}
                   />
                   <Text fontSize="sm" color="gray.600">
-                    Goal: ${horse.goal}
-                  </Text>
-                </Box>
+                    Goal: ${item.goal}
+                </Text>
+              </Box>
               </Link>
             </React.Fragment>
           ))}
