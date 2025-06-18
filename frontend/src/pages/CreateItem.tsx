@@ -26,6 +26,7 @@ const CreateItem = () => {
   const [pricingMode, setPricingMode] = useState<'fixed' | 'variable'>('fixed');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [description, setDescription] = useState("");
 
   const navigate = useNavigate();
   const toast = useToast();
@@ -53,16 +54,23 @@ const CreateItem = () => {
       token: import.meta.env.VITE_NFT_STORAGE_KEY || "",
     });
 
-    const metadata = await nftClient.store({
-      name: imageFile.name || "Uploaded Image",
-      image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type }),
-      itemType,
-      sharePrice: form.sharePrice,
-      totalShares: form.totalShares,
-      pricingMode,
-    } as any);
+    try {
+      const buffer = await imageFile.arrayBuffer();
+      const metadata = await nftClient.store({
+        name: imageFile.name || "Uploaded Image",
+        description,
+        image: new NFTFile([buffer], imageFile.name, { type: imageFile.type }),
+        itemType,
+        sharePrice: form.sharePrice,
+        totalShares: form.totalShares,
+        pricingMode,
+      } as any);
 
-    return metadata.url;
+      return metadata.url;
+    } catch (err) {
+      console.error("Failed to upload to IPFS:", err);
+      return "";
+    }
   };
 
   const handleSubmit = async () => {
@@ -84,6 +92,15 @@ const CreateItem = () => {
         return;
       }
 
+      if (!description.trim()) {
+        toast({
+          status: "error",
+          title: "Missing description",
+          description: "Please provide a description for your item.",
+        });
+        return;
+      }
+
       const metadataURI = await uploadToIPFS();
       const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
 
@@ -92,6 +109,7 @@ const CreateItem = () => {
         itemType,
         sharePrice: sharePriceWei.toString(),
         totalShares,
+        description,
         image: metadataURI,
       });
 
@@ -112,7 +130,7 @@ const CreateItem = () => {
 
       navigate("/dashboard");
     } catch (err) {
-      console.error("Failed to create item", err);
+      console.error("Failed to create item:", err);
     }
   };
 
@@ -146,6 +164,16 @@ const CreateItem = () => {
             type="number"
             value={form.totalShares}
             onChange={handleChange}
+          />
+        </Box>
+
+        <Box>
+          <FormLabel htmlFor="description">Description</FormLabel>
+          <Input
+            name="description"
+            placeholder="Describe your item"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
           />
         </Box>
 
