@@ -57,35 +57,34 @@ const HorseDetail: React.FC = () => {
     error: mintError,
   } = useContractWrite(config);
 
-  // Prepare transaction to buy entire horse
+  // Prepare transaction to buy remaining shares
   const {
-    config: buyAllConfig,
-    isLoading: isPreparingAll,
-    error: prepareAllError,
-    isSuccess: canBuyAll,
+    config: buyMaxConfig,
+    isLoading: isPreparingMax,
+    error: prepareMaxError,
+    isSuccess: canBuyMax,
   } = usePrepareContractWrite({
     address: HORSE_TOKEN_ADDRESS,
     abi: horseTokenABI,
     functionName: "mint",
-    args: [address, tokenId, maxSupply ?? 0],
+    args: [address, tokenId, remainingSupply ?? 0],
     overrides:
-      maxSupply !== null
-        ? { value: BigInt(maxSupply) * parseEther("0.00001") }
+      remainingSupply !== null
+        ? { value: BigInt(remainingSupply) * parseEther("0.00001") }
         : undefined,
     chainId: 11155420,
     enabled: Boolean(
       address &&
       tokenId >= 0 &&
-      maxSupply !== null &&
-      mintedSoFar !== null &&
-      mintedSoFar === 0
+      remainingSupply !== null &&
+      remainingSupply > 0
     ),
   });
   const {
-    writeAsync: mintAllAsync,
-    isLoading: isMintingAll,
-    error: mintAllError,
-  } = useContractWrite(buyAllConfig);
+    writeAsync: buyMaxAsync,
+    isLoading: isBuyingMax,
+    error: buyMaxError,
+  } = useContractWrite(buyMaxConfig);
 
   // 1) Fetch on-chain maxSupply and mintedSoFar → compute remainingSupply
   useEffect(() => {
@@ -198,28 +197,28 @@ const HorseDetail: React.FC = () => {
     }
   };
 
-  const handleBuyEntireHorse = async () => {
+  const handleBuyMax = async () => {
     if (!address) {
       alert("Please connect your wallet first.");
       return;
     }
-    if (isPreparingAll) {
+    if (isPreparingMax) {
       alert("Preparing transaction—please wait.");
       return;
     }
-    if (prepareAllError) {
-      console.error("Prepare error:", prepareAllError);
+    if (prepareMaxError) {
+      console.error("Prepare error:", prepareMaxError);
       alert("Failed to prepare transaction.");
       return;
     }
-    if (!canBuyAll || !mintAllAsync) {
+    if (!canBuyMax || !buyMaxAsync) {
       alert("Transaction not ready yet.");
       return;
     }
     try {
-      const tx = await mintAllAsync();
+      const tx = await buyMaxAsync();
       toast({
-        title: "You now own 100% of this horse!",
+        title: `Purchased remaining shares!`,
         status: "success",
         duration: 5000,
         isClosable: true,
@@ -285,18 +284,18 @@ const HorseDetail: React.FC = () => {
           Buy Share for 0.00001 ETH
         </Button>
         <Tooltip
-          label="Some shares already owned"
-          isDisabled={mintedSoFar === 0 || mintedSoFar === null}
+          label="No shares remaining"
+          isDisabled={remainingSupply !== null && remainingSupply > 0}
         >
           <Button
             colorScheme="purple"
             variant="outline"
             size="sm"
-            onClick={handleBuyEntireHorse}
-            isDisabled={mintedSoFar !== null && mintedSoFar > 0}
-            isLoading={isPreparingAll || isMintingAll}
+            onClick={handleBuyMax}
+            isDisabled={remainingSupply !== null && remainingSupply <= 0}
+            isLoading={isPreparingMax || isBuyingMax}
           >
-            Buy Entire Item
+            Buy Max
           </Button>
         </Tooltip>
       </HStack>
