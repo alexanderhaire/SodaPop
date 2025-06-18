@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import DashboardPage from "./pages/DashboardPage";
 // File: frontend/src/App.tsx
-import CreateItem from "./pages/CreateItem";
+import CreateItemForm from "./pages/CreateItemForm";
 
 import React from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
@@ -120,7 +120,7 @@ const App: React.FC = () => {
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/items" element={<ItemList />} />
-        <Route path="/create" element={<CreateItem />} />
+        <Route path="/create" element={<CreateItemForm />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/my-items" element={<MyItems />} />
         <Route path="/bought" element={<BoughtItems />} />
