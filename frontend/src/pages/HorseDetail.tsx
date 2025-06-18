@@ -13,7 +13,16 @@ import {
   HStack,
   Tooltip,
   useToast,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
+  FormControl,
+  FormLabel,
+  Input,
 } from "@chakra-ui/react";
+import { ethers } from "ethers";
 import axios from "axios";
 import {
   useAccount,
@@ -35,6 +44,8 @@ const HorseDetail: React.FC = () => {
   const [mintedSoFar, setMintedSoFar] = useState<number | null>(null);
   const [remainingSupply, setRemainingSupply] = useState<number | null>(null);
   const [sharesOwned, setSharesOwned] = useState<number | null>(null);
+  const [calcShares, setCalcShares] = useState<string>("");
+  const [calcEarnings, setCalcEarnings] = useState<string>("");
 
   // Prepare mint transaction
   const {
@@ -230,6 +241,22 @@ const HorseDetail: React.FC = () => {
     }
   };
 
+  const projectedReturn = React.useMemo(() => {
+    if (!calcShares || !calcEarnings || !maxSupply) return "0";
+    try {
+      const earningsWei = ethers.parseEther(calcEarnings);
+      const resultWei = (earningsWei * BigInt(Number(calcShares))) / BigInt(maxSupply);
+      return ethers.formatEther(resultWei);
+    } catch {
+      return "0";
+    }
+  }, [calcShares, calcEarnings, maxSupply]);
+
+  const ownershipPercent = React.useMemo(() => {
+    if (!calcShares || !maxSupply) return 0;
+    return (Number(calcShares) / maxSupply) * 100;
+  }, [calcShares, maxSupply]);
+
   return (
     <Box p={6} maxW="700px" mx="auto">
       <Heading mb={4}>{horse.name}</Heading>
@@ -298,6 +325,46 @@ const HorseDetail: React.FC = () => {
           </Button>
         </Tooltip>
       </HStack>
+
+      <Accordion allowToggle mt={4}>
+        <AccordionItem>
+          <AccordionButton>
+            <Box flex="1" textAlign="left">
+              Projected Earnings
+            </Box>
+            <AccordionIcon />
+          </AccordionButton>
+          <AccordionPanel pb={4}>
+            <VStack spacing={3} align="stretch">
+              <FormControl>
+                <FormLabel>Number of Shares</FormLabel>
+                <Input
+                  type="number"
+                  value={calcShares}
+                  onChange={(e) => setCalcShares(e.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Projected Horse Earnings (ETH)</FormLabel>
+                <Input
+                  type="number"
+                  value={calcEarnings}
+                  onChange={(e) => setCalcEarnings(e.target.value)}
+                />
+              </FormControl>
+              {calcShares && calcEarnings && maxSupply !== null && (
+                <Text>
+                  You would earn {projectedReturn} ETH (
+                  {ownershipPercent.toFixed(2)}% ownership)
+                </Text>
+              )}
+              <Text fontSize="sm" color="gray.500">
+                This is an estimate. Actual earnings may vary.
+              </Text>
+            </VStack>
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
     </Box>
   );
 };
