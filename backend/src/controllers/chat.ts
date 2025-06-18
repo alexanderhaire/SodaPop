@@ -3,7 +3,12 @@
 import { Router, Request, Response } from "express";
 import OpenAI from "openai"; // using v4+ SDK
 import { OPENAI_API_KEY } from "../utils/config";
+<<<<<<< HEAD
 import { buildPersonalizationPrompt } from "../ai/personalizationEngine";
+=======
+import { getWalletPreferences } from "../ai/personalizationEngine";
+import ChatMessage from "../models/chatMessage";
+>>>>>>> origin/4xtxcq-codex/modify-chat-controller-to-load-last-5-exchanges
 
 const MAX_PROMPT_LENGTH = 2000;
 
@@ -39,12 +44,25 @@ router.post(
       );
       const userContent = sanitize(message.content, MAX_PROMPT_LENGTH);
 
-      // Send the single user message to the OpenAI chat completion endpoint.
-      // If you need full history, collect previous messages on the frontend and send them here.
+      // Load last 5 exchanges for this wallet
+      const historyDocs = wallet
+        ? await ChatMessage.find({ wallet })
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .lean()
+        : [];
+      const history = historyDocs
+        .reverse()
+        .map((m) => ({
+          role: m.role as "user" | "assistant" | "system",
+          content: sanitize(m.content, MAX_PROMPT_LENGTH),
+        }));
+
       const completion = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
+          ...history,
           { role: message.role, content: userContent } as any,
         ],
       });
@@ -61,6 +79,19 @@ router.post(
         role: choice.message.role as "assistant",
         content: choice.message.content,
       };
+
+      if (wallet) {
+        await ChatMessage.create({
+          wallet,
+          role: message.role,
+          content: userContent,
+        });
+        await ChatMessage.create({
+          wallet,
+          role: "assistant",
+          content: reply.content,
+        });
+      }
 
       res.json({ reply });
     } catch (err) {

@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 import authRoutes from "./controllers/auth";
 import portfolioRoutes from "./controllers/portfolio";
@@ -9,11 +10,23 @@ import chatRoutes from "./controllers/chat";
 import marketplaceRoutes from "./controllers/marketplaceController";
 import itemsRoutes from "./routes/items";
 import leaderboardRoutes from "./controllers/leaderboard";
+<<<<<<< HEAD
 import eventRoutes from "./routes/events";
 import { PORT, JWT_SECRET } from "./utils/config";
 import { startEventMonitor } from "./jobs/eventMonitor";
+=======
+import { PORT, JWT_SECRET, MONGO_URI } from "./utils/config";
+>>>>>>> origin/4xtxcq-codex/modify-chat-controller-to-load-last-5-exchanges
 
 dotenv.config();
+
+// Connect to MongoDB if a URI is provided
+if (MONGO_URI) {
+  mongoose
+    .connect(MONGO_URI)
+    .then(() => console.log("✅ Connected to MongoDB"))
+    .catch((err) => console.error("Mongo connection error:", err));
+}
 
 const app = express();
 app.use(cors());
