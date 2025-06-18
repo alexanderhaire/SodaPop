@@ -25,5 +25,40 @@ export const horseTokenABI = [
       { name: "amount", type: "uint256" }
     ],
     outputs: []
+  },
+  {
+    type: "function",
+    name: "maxSupply",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    type: "function",
+    name: "horseSupply",
+    stateMutability: "view",
+    inputs: [{ name: "", type: "uint256" }],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    type: "function",
+    name: "createHorseOffering",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "tokenId", type: "uint256" },
+      { name: "sharePrice", type: "uint256" },
+      { name: "totalShares", type: "uint256" }
+    ],
+    outputs: []
+  },
+  {
+    type: "function",
+    name: "getHorseOffering",
+    stateMutability: "view",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: [
+      { name: "", type: "uint256" },
+      { name: "", type: "uint256" }
+    ]
   }
 ];
