@@ -11,6 +11,18 @@ import {
   import { useAccount, useWalletClient } from "wagmi";
   import { readContract } from "@wagmi/core";
   import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
+  import {
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    Tooltip,
+    ResponsiveContainer,
+    PieChart,
+    Pie,
+    Cell,
+    Legend,
+  } from "recharts";
   
   interface ItemStats {
     id: string;
@@ -29,7 +41,11 @@ import {
     const [error, setError] = useState("");
 
     // Placeholder for variable pricing assets.
-    const [variableAssets, setVariableAssets] = useState<any[]>([]);
+  const [variableAssets, setVariableAssets] = useState<any[]>([]);
+  const [chartData, setChartData] = useState<
+    { name: string; earnings: number; share: number; goal: number }[]
+  >([]);
+  const COLORS = ["#805AD5", "#38B2AC", "#ED8936", "#718096", "#e53e3e"];
   
     useEffect(() => {
       const fetchAnalytics = async () => {
@@ -77,6 +93,14 @@ import {
 
           setItems(updated);
           setVariableAssets(updated);
+          setChartData(
+            updated.map((i) => ({
+              name: i.name,
+              earnings: i.total_earned,
+              share: i.my_share,
+              goal: i.goal,
+            }))
+          );
         } catch (err) {
     console.error("❌ Failed to load earnings:", err);
           setError("Failed to load earnings.");
@@ -97,7 +121,42 @@ import {
           {variableAssets.length === 0 ? (
             <Text>No share data available. Create a variable asset to get started.</Text>
           ) : (
-            <VStack spacing={4} align="stretch">
+            <>
+              <Box mb={6}>
+                <Heading size="md" mb={2}>Portfolio Overview</Heading>
+                <Box h="300px">
+                  {loading ? (
+                    <Spinner />
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ left: 0, right: 0, top: 10, bottom: 0 }}>
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="earnings" fill="#805AD5" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </Box>
+                <Box h="300px" mt={4}>
+                  {loading ? (
+                    <Spinner />
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={chartData} dataKey="share" nameKey="name" outerRadius={100} label>
+                          {chartData.map((_, idx) => (
+                            <Cell key={`c-${idx}`} fill={COLORS[idx % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
+                </Box>
+              </Box>
+              <VStack spacing={4} align="stretch">
               {items.map((item) => (
                 <Box
                   key={item.id}
@@ -121,6 +180,7 @@ import {
                 </Box>
               ))}
             </VStack>
+            </>
           )}
         </Box>
       </>
