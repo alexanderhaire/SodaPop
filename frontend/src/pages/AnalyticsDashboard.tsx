@@ -27,6 +27,10 @@ import {
     const [items, setItems] = useState<ItemStats[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
+
+    // Placeholder for variable pricing assets. Currently, our API only
+    // returns a single list of items, so use that data directly.
+    const variableAssets = items;
   
     useEffect(() => {
       const fetchAnalytics = async () => {
