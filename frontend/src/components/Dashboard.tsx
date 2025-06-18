@@ -8,15 +8,15 @@ import {
   Badge,
   Progress,
 } from "@chakra-ui/react";
-import axios from "../utils/axiosConfig";
 import { Link } from "react-router-dom";
+import { fetchEarningsStats, ItemStats } from "../utils/earningsService";
 
 interface DashboardProps {
   userAddress?: string;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<ItemStats[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,8 +27,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userAddress }) => {
       setLoading(true);
       setError("");
       try {
-        const res = await axios.get(`/earnings/${userAddress}`);
-        setItems(res.data);
+        const data = await fetchEarningsStats(userAddress, 11155420);
+        setItems(data);
       } catch (err) {
         setError("Unable to load earnings.");
       } finally {

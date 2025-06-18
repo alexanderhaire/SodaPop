@@ -8,18 +8,8 @@ import {
     Spinner,
   } from "@chakra-ui/react";
   import { useEffect, useState } from "react";
-  import { useAccount, useWalletClient } from "wagmi";
-  import { readContract } from "@wagmi/core";
-  import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
-  
-  interface ItemStats {
-    id: string;
-    name: string;
-    goal: number;
-    my_share: number;
-    total_earned: number;
-    progress_to_goal: number;
-  }
+import { useAccount, useWalletClient } from "wagmi";
+import { fetchEarningsStats, ItemStats } from "../utils/earningsService";
   
   const AnalyticsDashboard: React.FC = () => {
     const { address } = useAccount();
@@ -38,40 +28,12 @@ import {
         setError("");
   
         try {
-          const url = `/api/earnings/${address}`;
-          const res = await fetch(url);
-          if (!res.ok) {
-            const text = await res.text();
-            console.error(`Unexpected response for ${url}:`, res.status, text);
-            throw new Error(`Invalid response ${res.status}`);
-          }
-          const data = await res.json();
-  
-          // Optional: Fetch on-chain balances
-          const updated = await Promise.all(
-            data.map(async (item: any, idx: number) => {
-  if (!walletClient?.chain?.id) throw new Error("Missing chainId in walletClient");
-  const chainId = walletClient?.chain?.id;
-  if (!chainId) throw new Error("Missing chainId");
-              const raw = await readContract(undefined as any, {
-                address: HORSE_TOKEN_ADDRESS,
-                abi: horseTokenABI,
-                functionName: "balanceOf",
-                args: [address, idx],
-                chainId,
-              });
-  
-              return {
-                ...item,
-                my_share: Number(raw),
-              };
-            })
-          );
-
+          const chainId = walletClient?.chain?.id ?? 11155420;
+          const updated = await fetchEarningsStats(address, chainId);
           setItems(updated);
           setVariableAssets(updated);
         } catch (err) {
-    console.error("❌ Failed to load earnings:", err);
+          console.error("❌ Failed to load earnings:", err);
           setError("Failed to load earnings.");
         } finally {
           setLoading(false);
