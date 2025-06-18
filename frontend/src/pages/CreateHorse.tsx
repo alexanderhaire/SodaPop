@@ -5,7 +5,8 @@ import {
   Input,
   Button,
   VStack,
-  FormLabel
+  FormLabel,
+  useToast
 } from "@chakra-ui/react";
 import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
@@ -15,11 +16,6 @@ import HorseFactoryABI from "../abi/HorseFactory.json"; // ✅ adjust this if pa
 
 const CreateHorse = () => {
   const [form, setForm] = useState({
-    name: "",
-    age: "",
-    trainer: "",
-    record: "",
-    earnings: "",
     sharePrice: "",
     totalShares: ""
   });
@@ -53,32 +49,33 @@ const CreateHorse = () => {
     });
 
     const metadata = await nftClient.store({
-      name: form.name,
-      description: `Fractional ownership of racehorse ${form.name}`,
-      image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type }),
-      properties: {
-        trainer: form.trainer,
-        record: form.record,
-        earnings: form.earnings
-      }
+      image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type })
     });
 
     return metadata.url;
   };
 
+  const toast = useToast();
+
   const handleSubmit = async () => {
     try {
+      const sharePrice = Number(form.sharePrice);
+      const totalShares = Number(form.totalShares);
+
+      if (sharePrice <= 0 || totalShares <= 0) {
+        toast({
+          status: "error",
+          title: "Invalid input",
+          description: "Share price and total shares must be greater than 0",
+        });
+        return;
+      }
+
       const metadataURI = await uploadToIPFS();
 
       const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
-      const totalShares = Number(form.totalShares);
 
       await axios.post("/horses", {
-        name: form.name,
-        age: form.age,
-        trainer: form.trainer,
-        record: form.record,
-        earnings: form.earnings,
         sharePrice: sharePriceWei.toString(),
         totalShares,
         image: metadataURI,
@@ -103,20 +100,8 @@ const CreateHorse = () => {
 
   return (
     <Box p={6}>
-      <Heading size="lg" mb={4}>Create New Racehorse</Heading>
+      <Heading size="lg" mb={4}>Create New Offering</Heading>
       <VStack spacing={4} align="stretch">
-        {["name", "age", "trainer", "record", "earnings"].map((field) => (
-          <Box key={field}>
-            <FormLabel htmlFor={field}>
-              {field.charAt(0).toUpperCase() + field.slice(1)}
-            </FormLabel>
-            <Input
-              name={field}
-              value={(form as any)[field]}
-              onChange={handleChange}
-            />
-          </Box>
-        ))}
 
         <Box>
           <FormLabel htmlFor="sharePrice">Share Price (ETH)</FormLabel>
