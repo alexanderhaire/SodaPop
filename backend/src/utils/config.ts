@@ -8,12 +8,9 @@ export const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
 
 export const JWT_SECRET = process.env.JWT_SECRET || "replace_with_strong_secret";
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
-<<<<<<< HEAD
 export const SMTP_HOST = process.env.SMTP_HOST || "";
 export const SMTP_PORT = Number(process.env.SMTP_PORT) || 587;
 export const SMTP_USER = process.env.SMTP_USER || "";
 export const SMTP_PASS = process.env.SMTP_PASS || "";
 export const ALERT_EMAIL = process.env.ALERT_EMAIL || "";
-=======
 export const MONGO_URI = process.env.MONGO_URI || "";
->>>>>>> origin/4xtxcq-codex/modify-chat-controller-to-load-last-5-exchanges
