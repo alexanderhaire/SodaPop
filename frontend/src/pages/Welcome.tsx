@@ -13,6 +13,13 @@ const Welcome: React.FC = () => (
       <Text>
         Variable assets provide ongoing fractional ownership via tokenized shares, while fixed assets enable one-time purchases. Explore the market to discover a variety of tokenized real-world assets.
       </Text>
+      <Text>
+        AI features power much of the experience. GPT-4o vision suggests titles
+        and descriptions for new listings when images are uploaded. A chat
+        assistant built on GPT-4o-mini answers DeFi questions, while GPT-3.5
+        summarizes marketplace events. OpenAI embeddings drive personalized
+        recommendations and ranking based on user interactions.
+      </Text>
     </VStack>
   </Box>
 );
