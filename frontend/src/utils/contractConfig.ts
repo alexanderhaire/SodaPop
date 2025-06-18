@@ -62,3 +62,26 @@ export const horseTokenABI = [
     ]
   }
 ];
+
+// Fixed asset (ERC-721 burnable) configuration
+export const FIXED_TOKEN_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+export const fixedTokenABI = [
+  {
+    type: "function",
+    name: "mintFixed",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "to", type: "address" },
+      { name: "tokenURI", type: "string" }
+    ],
+    outputs: [{ name: "", type: "uint256" }]
+  },
+  {
+    type: "function",
+    name: "burn",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "tokenId", type: "uint256" }],
+    outputs: []
+  }
+];
