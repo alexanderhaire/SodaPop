@@ -1,5 +1,4 @@
 import { useState } from "react";
-// Asset creation page chooses between variable (ERC-1155) and fixed (ERC-721) logic
 import {
   Box,
   Heading,
@@ -29,7 +28,6 @@ const CreateItem = () => {
     totalShares: ""
   });
   const [itemType, setItemType] = useState<string>("");
-  // "variable" mints ERC-1155 shares; "fixed" mints burnable ERC-721 tokens
   const [pricingMode, setPricingMode] = useState<'fixed' | 'variable'>('fixed');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -56,7 +54,6 @@ const CreateItem = () => {
 
   const uploadToIPFS = async () => {
     if (!imageFile) return "";
-
     try {
       const cid = await uploadToNftStorageV2(imageFile);
       return `ipfs://${cid}`;
@@ -115,15 +112,14 @@ const CreateItem = () => {
         image: metadataURI,
       });
 
-      const provider =
-        typeof window !== "undefined" && (window as any).ethereum
-          ? new ethers.BrowserProvider((window as any).ethereum)
-          : undefined;
+      const provider = typeof window !== "undefined" && (window as any).ethereum
+        ? new ethers.BrowserProvider((window as any).ethereum)
+        : undefined;
       if (!provider) throw new Error("Ethereum provider not found");
       const signer = await provider.getSigner();
       let tx;
+
       if (pricingMode === "variable") {
-        // Variable assets mint ERC-1155 fractional tokens that remain tradeable
         const variableToken = new ethers.Contract(
           HORSE_TOKEN_ADDRESS,
           horseTokenABI,
@@ -131,7 +127,6 @@ const CreateItem = () => {
         );
         tx = await variableToken.createHorse(totalShares, sharePriceWei, metadataURI);
       } else {
-        // Fixed assets mint ERC-721 tokens which can later be burned
         const fixedToken = new ethers.Contract(
           FIXED_TOKEN_ADDRESS,
           fixedTokenABI,
@@ -140,7 +135,6 @@ const CreateItem = () => {
         tx = await fixedToken.mintFixed(await signer.getAddress(), metadataURI);
       }
       await tx.wait();
-
       navigate("/dashboard");
     } catch (err) {
       console.error("Failed to create item:", err);
