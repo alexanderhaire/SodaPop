@@ -5,6 +5,25 @@
     "age": 4,
     "trainer": "Sarah Gallagher",
     "record": "12 starts – 4 wins – 5 places",
-    "earnings": "$215,300"
+    "earnings": "$215,300",
+    "image": "/images/sodapop.png"
+  },
+  {
+    "id": "ironcomet",
+    "name": "Iron Comet",
+    "age": 5,
+    "trainer": "Dave Johnson",
+    "record": "15 starts – 7 wins – 4 places",
+    "earnings": "$303,800",
+    "image": "https://via.placeholder.com/150"
+  },
+  {
+    "id": "thunderbolt",
+    "name": "Thunder Bolt",
+    "age": 3,
+    "trainer": "Amanda Lee",
+    "record": "10 starts – 3 wins – 6 places",
+    "earnings": "$123,750",
+    "image": "https://via.placeholder.com/150"
   }
 ]
