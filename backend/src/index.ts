@@ -7,6 +7,7 @@ import mongoose from "mongoose";
 import authRoutes from "./controllers/auth";
 import portfolioRoutes from "./controllers/portfolio";
 import chatRoutes from "./controllers/chat";
+import sodabotRoutes from "./routes/sodabot";
 import marketplaceRoutes from "./controllers/marketplaceController";
 import itemsRoutes from "./routes/items";
 import leaderboardRoutes from "./controllers/leaderboard";
@@ -73,6 +74,9 @@ app.use("/api", requireAuth, eventRoutes);
 
 // Leaderboard endpoint (unprotected)
 app.use("/api/leaderboard", leaderboardRoutes);
+
+// SodaBot chat endpoint (unprotected)
+app.use("/api/sodabot", sodabotRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend listening on http://localhost:${PORT}`);
