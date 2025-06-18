@@ -125,7 +125,7 @@ const CreateHorse = () => {
         </Box>
 
         <Box>
-          <FormLabel>Horse Image</FormLabel>
+          <FormLabel>Image</FormLabel>
           <Input type="file" accept="image/*" onChange={handleImageUpload} />
           {imagePreview && (
             <Box mt={2}>
