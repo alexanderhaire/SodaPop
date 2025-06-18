@@ -15,13 +15,15 @@ import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
 import { NFTStorage, File as NFTFile } from "nft.storage";
 import { ethers } from "ethers";
-import HorseFactoryABI from "../abi/HorseFactory.json"; // ✅ adjust this if path differs
+import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
 
 const CreateHorse = () => {
   const [form, setForm] = useState({
     sharePrice: "",
     totalShares: ""
   });
+  // Pricing mode for horse creation; 0 denotes default fixed pricing
+  const pricingMode = 0;
 
   const [pricingMode, setPricingMode] = useState<'fixed' | 'variable'>('fixed');
 
@@ -55,10 +57,7 @@ const CreateHorse = () => {
 
     const metadata = await nftClient.store({
       name: imageFile.name || "Uploaded Image",
-      image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type }),
-      sharePrice: form.sharePrice,
-      totalShares: form.totalShares,
-      pricingMode,
+
     });
 
     return metadata.url;
@@ -68,6 +67,10 @@ const CreateHorse = () => {
 
   const handleSubmit = async () => {
     try {
+      if (!imageFile) {
+        alert("Please upload an image before submitting.");
+        return;
+      }
       const sharePrice = Number(form.sharePrice);
       const totalShares = Number(form.totalShares);
 
@@ -85,21 +88,19 @@ const CreateHorse = () => {
       const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
 
       await axios.post("/horses", {
-        sharePrice: sharePriceWei.toString(),
-        totalShares,
-        image: metadataURI,
+
         pricingMode,
       });
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const horseFactory = new ethers.Contract(
-        import.meta.env.VITE_HORSE_FACTORY_ADDRESS,
-        HorseFactoryABI.abi,
+      const horseToken = new ethers.Contract(
+        HORSE_TOKEN_ADDRESS,
+        horseTokenABI,
         signer
       );
 
-      const tx = await horseFactory.createHorse(totalShares, sharePriceWei, metadataURI);
+
       await tx.wait();
 
       navigate("/dashboard");
@@ -109,27 +110,7 @@ const CreateHorse = () => {
   };
 
   return (
-    <Box p={6}>
-      <Flex justify="flex-end" mb={4}>
-        <HStack>
-          <FormLabel htmlFor="pricingMode" mb="0">
-            Fixed
-          </FormLabel>
-          <Switch
-            id="pricingMode"
-            isChecked={pricingMode === "variable"}
-            onChange={() =>
-              setPricingMode(
-                pricingMode === "fixed" ? "variable" : "fixed"
-              )
-            }
-          />
-          <FormLabel htmlFor="pricingMode" mb="0">
-            Variable
-          </FormLabel>
-        </HStack>
-      </Flex>
-      <Heading size="lg" mb={4}>Create New Offering</Heading>
+
       <VStack spacing={4} align="stretch">
 
         <Box>
@@ -167,7 +148,7 @@ const CreateHorse = () => {
           )}
         </Box>
 
-        <Button colorScheme="teal" onClick={handleSubmit}>
+        <Button colorScheme="purple" onClick={handleSubmit}>
           Create
         </Button>
       </VStack>

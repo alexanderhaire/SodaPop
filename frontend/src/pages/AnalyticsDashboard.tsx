@@ -72,8 +72,10 @@ import {
     }, [address, walletClient]);
   
     return (
-      <Box>
-        <Heading size="lg" mb={4}>Your Horse Share Analytics</Heading>
+      <Box p={6} maxW="800px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
+        <Heading size="lg" mb={4} color="purple.600">
+          Your Horse Share Analytics
+        </Heading>
         {loading ? (
           <Spinner />
         ) : error ? (

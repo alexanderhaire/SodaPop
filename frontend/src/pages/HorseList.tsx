@@ -17,10 +17,10 @@ const HorseList: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <Box p={6}>
+    <Box p={6} maxW="800px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
       <HStack justify="space-between" mb={4}>
-        <Heading size="lg">Available Horses</Heading>
-        <Button as={Link} to="/create" colorScheme="purple" variant="outline">
+        <Heading size="lg" color="purple.600">Available Horses</Heading>
+        <Button as={Link} to="/create" colorScheme="purple" variant="solid">
           Add Item
         </Button>
       </HStack>
@@ -33,6 +33,8 @@ const HorseList: React.FC = () => {
             borderRadius="lg"
             justify="space-between"
             align="center"
+            bg="white"
+            boxShadow="md"
           >
             <HStack spacing={4}>
               <Image
@@ -46,7 +48,7 @@ const HorseList: React.FC = () => {
                 <Text color="gray.500">{horse.record}</Text>
               </Box>
             </HStack>
-            <Button onClick={() => navigate(`/horses/${horse.id}`)}>
+            <Button colorScheme="teal" onClick={() => navigate(`/horses/${horse.id}`)}>
               Details
             </Button>
           </HStack>
