@@ -16,6 +16,7 @@ import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { clearToken } from "./utils/authToken";
 import { formatAddress } from "./utils/formatAddress";
 import ItemList from "./pages/ItemList";
+import Welcome from "./pages/Welcome";
 import ItemDetail from "./pages/ItemDetail";
 import Chatbot from "./pages/Chatbot";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
@@ -46,7 +47,7 @@ const App: React.FC = () => {
 
           <Button
             variant="grey"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/items")}
             size="sm"
           >
             Items
@@ -117,7 +118,8 @@ const App: React.FC = () => {
       </Box>
 
       <Routes>
-        <Route path="/" element={<ItemList />} />
+        <Route path="/" element={<Welcome />} />
+        <Route path="/items" element={<ItemList />} />
         <Route path="/create" element={<CreateItem />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/my-items" element={<MyItems />} />
