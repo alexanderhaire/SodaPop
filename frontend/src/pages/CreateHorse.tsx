@@ -6,7 +6,10 @@ import {
   Button,
   VStack,
   FormLabel,
-  useToast
+  useToast,
+  Flex,
+  Switch,
+  HStack
 } from "@chakra-ui/react";
 import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +24,8 @@ const CreateHorse = () => {
   });
   // Pricing mode for horse creation; 0 denotes default fixed pricing
   const pricingMode = 0;
+
+  const [pricingMode, setPricingMode] = useState<'fixed' | 'variable'>('fixed');
 
   const navigate = useNavigate();
 
@@ -52,7 +57,7 @@ const CreateHorse = () => {
 
     const metadata = await nftClient.store({
       name: imageFile.name || "Uploaded Image",
-      image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type })
+
     });
 
     return metadata.url;
@@ -83,9 +88,7 @@ const CreateHorse = () => {
       const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
 
       await axios.post("/horses", {
-        image: new NFTFile(imageFile, imageFile.name, { type: imageFile.type }),
-        sharePrice: form.sharePrice,
-        totalShares: form.totalShares,
+
         pricingMode,
       });
 
@@ -107,10 +110,7 @@ const CreateHorse = () => {
   };
 
   return (
-    <Box p={6} maxW="600px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
-      <Heading size="lg" mb={4} color="purple.600">
-        Create New Offering
-      </Heading>
+
       <VStack spacing={4} align="stretch">
 
         <Box>
