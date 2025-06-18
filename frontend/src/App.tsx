@@ -42,8 +42,8 @@ const App: React.FC = () => {
         boxShadow="md"
       >
         <HStack justify="space-between">
-          <Heading size="md" cursor="pointer" onClick={() => navigate("/")}>
-            SodaPop DeFi Assistant
+          <Heading size="md" cursor="pointer" onClick={() => navigate("/")}> 
+            Grey MarketPlace
           </Heading>
 
           <Button
