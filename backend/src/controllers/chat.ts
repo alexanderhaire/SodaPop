@@ -5,6 +5,13 @@ import OpenAI from "openai"; // using v4+ SDK
 import { OPENAI_API_KEY } from "../utils/config";
 import { getWalletPreferences } from "../ai/personalizationEngine";
 
+const MAX_PROMPT_LENGTH = 2000;
+
+function sanitize(text: string, max: number = MAX_PROMPT_LENGTH): string {
+  if (!text) return "";
+  return text.length > max ? text.slice(0, max) : text;
+}
+
 const router = Router();
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
@@ -26,16 +33,21 @@ router.post(
         (req.headers["x-wallet-address"] as string) ||
         "";
       const pref = wallet ? await getWalletPreferences(wallet) : "";
+      const systemPrompt = sanitize(
+        pref || "You are a helpful DeFi assistant.",
+        MAX_PROMPT_LENGTH
+      );
+      const userContent = sanitize(message.content, MAX_PROMPT_LENGTH);
 
       // Send the single user message to the OpenAI chat completion endpoint.
       // If you need full history, collect previous messages on the frontend and send them here.
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            ...(pref ? [{ role: "system", content: pref }] : []),
-            { role: message.role, content: message.content } as any,
-          ],
-        });
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: message.role, content: userContent } as any,
+        ],
+      });
 
       const choice = completion.choices?.[0];
       if (!choice || !choice.message?.content) {
