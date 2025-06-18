@@ -1,9 +1,11 @@
 import { useState } from "react";
 import axios from "axios";
+import { useAccount } from "wagmi";
 
 const SodaBot = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
+  const { address } = useAccount();
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -13,7 +15,10 @@ const SodaBot = () => {
     setInput("");
 
     try {
-      const res = await axios.post("/api/sodabot", { prompt: input });
+      const res = await axios.post("/api/sodabot", {
+        prompt: input,
+        userAddress: address?.toLowerCase(),
+      });
       const botMessage = { from: "bot", text: res.data.reply };
       setMessages((prev) => [...prev, botMessage]);
     } catch (err) {
