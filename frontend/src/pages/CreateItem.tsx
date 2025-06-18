@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
-import { NFTStorage, File as NFTFile } from "nft.storage";
+import axiosHttp from "axios";
 import { ethers } from "ethers";
 import {
   HORSE_TOKEN_ADDRESS,
@@ -32,7 +32,7 @@ const CreateItem = () => {
   // "variable" mints ERC-1155 shares; "fixed" mints burnable ERC-721 tokens
   const [pricingMode, setPricingMode] = useState<'fixed' | 'variable'>('fixed');
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [ipfsUrl, setIpfsUrl] = useState<string | null>(null);
   const [description, setDescription] = useState("");
 
   const navigate = useNavigate();
@@ -42,48 +42,47 @@ const CreateItem = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const uploadToNftStorageV2 = async (file: File): Promise<string> => {
+    const API_KEY = import.meta.env.VITE_NFT_STORAGE_KEY;
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await axiosHttp.post(
+      "https://api.nft.storage/upload",
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    if (response.data.ok) {
+      const cid = response.data.value.cid;
+      return `https://ipfs.io/ipfs/${cid}`;
+    } else {
+      throw new Error(`Upload failed: ${JSON.stringify(response.data.error)}`);
     }
   };
 
-  const uploadToIPFS = async () => {
-    if (!imageFile) return "";
-
-    const nftClient = new NFTStorage({
-      token: import.meta.env.VITE_NFT_STORAGE_KEY || "",
-    });
-
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
     try {
-      const buffer = await imageFile.arrayBuffer();
-      const metadata = await nftClient.store({
-        name: imageFile.name || "Uploaded Image",
-        description,
-        image: new NFTFile([buffer], imageFile.name, { type: imageFile.type }),
-        itemType,
-        sharePrice: form.sharePrice,
-        totalShares: form.totalShares,
-        pricingMode,
-      } as any);
-
-      return metadata.url;
+      const url = await uploadToNftStorageV2(file);
+      setIpfsUrl(url);
     } catch (err) {
-      console.error("Failed to upload to IPFS:", err);
-      return "";
+      console.error("Upload failed:", err);
+      toast({ status: "error", title: "Failed to upload image" });
     }
   };
 
   const handleSubmit = async () => {
     try {
-      if (!imageFile) {
-        alert("Please upload an image before submitting.");
+      if (!ipfsUrl) {
+        alert("Please wait for image upload.");
         return;
       }
 
@@ -101,9 +100,9 @@ const CreateItem = () => {
 
       let finalType = itemType;
       let finalDesc = description;
-      if ((!finalType || !finalDesc) && imagePreview) {
+      if ((!finalType || !finalDesc) && ipfsUrl) {
         try {
-          const res = await axios.post("/items/describe", { image: imagePreview });
+          const res = await axios.post("/items/describe", { image: ipfsUrl });
           if (!finalType) {
             finalType = res.data.title;
             setItemType(res.data.title);
@@ -117,7 +116,6 @@ const CreateItem = () => {
         }
       }
 
-      const metadataURI = await uploadToIPFS();
       const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
 
       await axios.post("/items", {
@@ -126,7 +124,7 @@ const CreateItem = () => {
         sharePrice: sharePriceWei.toString(),
         totalShares,
         description: finalDesc,
-        image: metadataURI,
+        image: ipfsUrl,
       });
 
       const provider =
@@ -143,7 +141,7 @@ const CreateItem = () => {
           horseTokenABI,
           signer
         );
-        tx = await variableToken.createHorse(totalShares, sharePriceWei, metadataURI);
+        tx = await variableToken.createHorse(totalShares, sharePriceWei, ipfsUrl);
       } else {
         // Fixed assets mint ERC-721 tokens which can later be burned
         const fixedToken = new ethers.Contract(
@@ -151,7 +149,7 @@ const CreateItem = () => {
           fixedTokenABI,
           signer
         );
-        tx = await fixedToken.mintFixed(await signer.getAddress(), metadataURI);
+        tx = await fixedToken.mintFixed(await signer.getAddress(), ipfsUrl);
       }
       await tx.wait();
 
@@ -207,11 +205,11 @@ const CreateItem = () => {
         <Box>
           <FormLabel>Image</FormLabel>
           <Input type="file" accept="image/*" onChange={handleImageUpload} />
-          {imagePreview && (
+          {ipfsUrl && (
             <Box mt={2}>
               <img
-                src={imagePreview}
-                alt="Preview"
+                src={ipfsUrl}
+                alt="IPFS Preview"
                 style={{ width: "200px", borderRadius: "8px" }}
               />
             </Box>
