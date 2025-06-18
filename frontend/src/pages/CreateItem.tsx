@@ -1,243 +1,160 @@
-import { useState } from "react";
-// Asset creation page chooses between variable (ERC-1155) and fixed (ERC-721) logic
-import {
-  Box,
-  Heading,
-  Input,
-  Button,
-  VStack,
-  FormLabel,
-  useToast,
-  Flex,
-  Switch,
-  HStack
-} from "@chakra-ui/react";
-import axios from "../utils/axiosConfig";
-import { useNavigate } from "react-router-dom";
-import { NFTStorage, File as NFTFile } from "nft.storage";
-import { ethers } from "ethers";
-import {
-  HORSE_TOKEN_ADDRESS,
-  horseTokenABI,
-  FIXED_TOKEN_ADDRESS,
-  fixedTokenABI,
-} from "../utils/contractConfig";
+// 🎯 GOAL: Full CreateItem form styled with Tailwind CSS, NFT.Storage V2 upload, and state-bound fields.
+// 💡 Assumes Tailwind is configured in the project.
 
-const CreateItem = () => {
+import { useState } from 'react';
+import axios from 'axios';
+import axiosClient from '../utils/axiosConfig';
+
+export default function CreateItem() {
   const [form, setForm] = useState({
-    sharePrice: "",
-    totalShares: ""
+    itemType: '',
+    sharePrice: '',
+    totalShares: '',
+    description: '',
+    isVariable: true,
   });
-  const [itemType, setItemType] = useState<string>("");
-  // "variable" mints ERC-1155 shares; "fixed" mints burnable ERC-721 tokens
-  const [pricingMode, setPricingMode] = useState<'fixed' | 'variable'>('fixed');
+
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [description, setDescription] = useState("");
+  const [ipfsUrl, setIpfsUrl] = useState<string | null>(null);
 
-  const navigate = useNavigate();
-  const toast = useToast();
-
-  const handleChange = (e: any) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const uploadToNftStorageV2 = async (file: File): Promise<string> => {
+    const API_KEY = import.meta.env.VITE_NFT_STORAGE_KEY;
+    const formData = new FormData();
+    formData.append('file', file);
 
-  const uploadToIPFS = async () => {
-    if (!imageFile) return "";
-
-    const nftClient = new NFTStorage({
-      token: import.meta.env.VITE_NFT_STORAGE_KEY || "",
+    const res = await axios.post('https://api.nft.storage/upload', formData, {
+      headers: {
+        Authorization: `Bearer ${API_KEY}`,
+        'Content-Type': 'multipart/form-data',
+      },
     });
 
-    try {
-      const buffer = await imageFile.arrayBuffer();
-      const metadata = await nftClient.store({
-        name: imageFile.name || "Uploaded Image",
-        description,
-        image: new NFTFile([buffer], imageFile.name, { type: imageFile.type }),
-        itemType,
-        sharePrice: form.sharePrice,
-        totalShares: form.totalShares,
-        pricingMode,
-      } as any);
-
-      return metadata.url;
-    } catch (err) {
-      console.error("Failed to upload to IPFS:", err);
-      return "";
+    if (res.data.ok) {
+      const cid = res.data.value.cid;
+      return `https://ipfs.io/ipfs/${cid}`;
+    } else {
+      throw new Error(`Upload failed: ${JSON.stringify(res.data.error)}`);
     }
   };
 
-  const handleSubmit = async () => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+
     try {
-      if (!imageFile) {
-        alert("Please upload an image before submitting.");
-        return;
-      }
-
-      const sharePrice = Number(form.sharePrice);
-      const totalShares = Number(form.totalShares);
-
-      if (sharePrice <= 0 || totalShares <= 0) {
-        toast({
-          status: "error",
-          title: "Invalid input",
-          description: "Share price and total shares must be greater than 0",
-        });
-        return;
-      }
-
-      let finalType = itemType;
-      let finalDesc = description;
-      if ((!finalType || !finalDesc) && imagePreview) {
-        try {
-          const res = await axios.post("/items/describe", { image: imagePreview });
-          if (!finalType) {
-            finalType = res.data.title;
-            setItemType(res.data.title);
-          }
-          if (!finalDesc) {
-            finalDesc = res.data.description;
-            setDescription(res.data.description);
-          }
-        } catch (err) {
-          console.error("Failed to generate defaults:", err);
-        }
-      }
-
-      const metadataURI = await uploadToIPFS();
-      const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
-
-      await axios.post("/items", {
-        pricingMode,
-        itemType: finalType,
-        sharePrice: sharePriceWei.toString(),
-        totalShares,
-        description: finalDesc,
-        image: metadataURI,
-      });
-
-      const provider =
-        typeof window !== "undefined" && (window as any).ethereum
-          ? new ethers.BrowserProvider((window as any).ethereum)
-          : undefined;
-      if (!provider) throw new Error("Ethereum provider not found");
-      const signer = await provider.getSigner();
-      let tx;
-      if (pricingMode === "variable") {
-        // Variable assets mint ERC-1155 fractional tokens that remain tradeable
-        const variableToken = new ethers.Contract(
-          HORSE_TOKEN_ADDRESS,
-          horseTokenABI,
-          signer
-        );
-        tx = await variableToken.createHorse(totalShares, sharePriceWei, metadataURI);
-      } else {
-        // Fixed assets mint ERC-721 tokens which can later be burned
-        const fixedToken = new ethers.Contract(
-          FIXED_TOKEN_ADDRESS,
-          fixedTokenABI,
-          signer
-        );
-        tx = await fixedToken.mintFixed(await signer.getAddress(), metadataURI);
-      }
-      await tx.wait();
-
-      navigate("/dashboard");
+      const url = await uploadToNftStorageV2(file);
+      setIpfsUrl(url);
     } catch (err) {
-      console.error("Failed to create item:", err);
+      console.error('Image upload error:', err);
+      alert('Failed to upload image.');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ipfsUrl) {
+      alert('Image not uploaded yet.');
+      return;
+    }
+
+    const payload = {
+      ...form,
+      sharePrice: parseFloat(form.sharePrice),
+      totalShares: parseInt(form.totalShares),
+      isVariable: Boolean(form.isVariable),
+      image: ipfsUrl,
+    };
+
+    try {
+      await axiosClient.post('/items', payload);
+      alert('✅ Item created!');
+    } catch (err) {
+      console.error('Item creation error:', err);
+      alert('Failed to create item.');
     }
   };
 
   return (
-    <Box p={6} maxW="600px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
-      <VStack spacing={4} align="stretch">
-        <Box>
-          <FormLabel>Item Type</FormLabel>
-          <Input
-            placeholder="e.g., Racehorse, Art, Collectible"
-            value={itemType}
-            onChange={(e) => setItemType(e.target.value)}
-          />
-        </Box>
+    <form
+      onSubmit={handleSubmit}
+      className="max-w-xl mx-auto p-6 bg-white rounded-lg shadow-md space-y-4"
+    >
+      <h2 className="text-xl font-bold">Create New Item</h2>
 
-        <Box>
-          <FormLabel htmlFor="sharePrice">Share Price (ETH)</FormLabel>
-          <Input
-            name="sharePrice"
-            type="number"
-            step="any"
-            value={form.sharePrice}
-            onChange={handleChange}
-          />
-        </Box>
+      <input
+        name="itemType"
+        placeholder="Item Type"
+        value={form.itemType}
+        onChange={handleChange}
+        className="w-full p-2 border rounded"
+      />
 
-        <Box>
-          <FormLabel htmlFor="totalShares">Total Shares</FormLabel>
-          <Input
-            name="totalShares"
-            type="number"
-            value={form.totalShares}
-            onChange={handleChange}
-          />
-        </Box>
+      <input
+        name="sharePrice"
+        placeholder="Share Price (ETH)"
+        type="number"
+        step="0.01"
+        value={form.sharePrice}
+        onChange={handleChange}
+        className="w-full p-2 border rounded"
+      />
 
-        <Box>
-          <FormLabel htmlFor="description">Description</FormLabel>
-          <Input
-            name="description"
-            placeholder="Describe your item"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </Box>
+      <input
+        name="totalShares"
+        placeholder="Total Shares"
+        type="number"
+        value={form.totalShares}
+        onChange={handleChange}
+        className="w-full p-2 border rounded"
+      />
 
-        <Box>
-          <FormLabel>Image</FormLabel>
-          <Input type="file" accept="image/*" onChange={handleImageUpload} />
-          {imagePreview && (
-            <Box mt={2}>
-              <img
-                src={imagePreview}
-                alt="Preview"
-                style={{ width: "200px", borderRadius: "8px" }}
-              />
-            </Box>
-          )}
-        </Box>
+      <input
+        name="description"
+        placeholder="Description"
+        value={form.description}
+        onChange={handleChange}
+        className="w-full p-2 border rounded"
+      />
 
-        <Flex justify="flex-end" mb={2}>
-          <HStack>
-            <FormLabel htmlFor="pricingMode" mb="0">Fixed</FormLabel>
-            <Switch
-              id="pricingMode"
-              isChecked={pricingMode === "variable"}
-              onChange={() =>
-                setPricingMode(pricingMode === "fixed" ? "variable" : "fixed")
-              }
-            />
-            <FormLabel htmlFor="pricingMode" mb="0">Variable</FormLabel>
-          </HStack>
-        </Flex>
+      <input
+        type="file"
+        onChange={handleFileChange}
+        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
+      />
 
-        <Button variant="cta" onClick={handleSubmit}>
-          Create
-        </Button>
-      </VStack>
-    </Box>
+      {ipfsUrl && (
+        <div className="mt-4">
+          <p className="text-sm font-medium text-gray-700">Image Preview:</p>
+          <img src={ipfsUrl} alt="IPFS Preview" className="w-48 mt-2 rounded shadow" />
+        </div>
+      )}
+
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          name="isVariable"
+          checked={form.isVariable}
+          onChange={handleChange}
+          className="toggle toggle-primary"
+        />
+        Variable
+      </label>
+
+      <button
+        type="submit"
+        className="w-full py-2 px-4 bg-black text-white rounded hover:bg-gray-800 transition"
+      >
+        Create
+      </button>
+    </form>
   );
-};
-
-export default CreateItem;
+}
