@@ -3,7 +3,7 @@
 import { Router, Request, Response } from "express";
 import OpenAI from "openai"; // using v4+ SDK
 import { OPENAI_API_KEY } from "../utils/config";
-import { getWalletPreferences } from "../ai/personalizationEngine";
+import { buildPersonalizationPrompt } from "../ai/personalizationEngine";
 
 const MAX_PROMPT_LENGTH = 2000;
 
@@ -32,7 +32,7 @@ router.post(
         (req.query.wallet as string) ||
         (req.headers["x-wallet-address"] as string) ||
         "";
-      const pref = wallet ? await getWalletPreferences(wallet) : "";
+      const pref = wallet ? await buildPersonalizationPrompt(wallet) : "";
       const systemPrompt = sanitize(
         pref || "You are a helpful DeFi assistant.",
         MAX_PROMPT_LENGTH
