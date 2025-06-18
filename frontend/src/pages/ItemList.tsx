@@ -24,7 +24,7 @@ const ItemList: React.FC = () => {
         </Button>
       </HStack>
       <VStack spacing={6} align="stretch">
-        {items.map((item) => (
+        {items.map((item, idx) => (
           <HStack
             key={item.id}
             p={4}
