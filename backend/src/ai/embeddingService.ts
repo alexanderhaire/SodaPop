@@ -1,95 +1,54 @@
 import OpenAI from "openai";
-import { OPENAI_API_KEY } from "../utils/config";
+// Import JS models with require to avoid typing issues
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Item = require("../models/item");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const User = require("../models/user");
+import { OPENAI_API_KEY } from "../utils/config";
+import { cosineSimilarity, averageVectors } from "../utils/vectorMath";
 
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-async function embed(text: string): Promise<number[]> {
-  const res = await openai.embeddings.create({
-    model: "text-embedding-3-small",
-    input: text,
-  });
-  return res.data[0]?.embedding || [];
-}
+export async function getRecommendedItems(
+  wallet: string,
+  top: number
+): Promise<any[]> {
+  const allItems = (await Item.find().lean()) as any[];
+  if (!wallet) return allItems.slice(0, top);
 
-function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length || a.length === 0) return 0;
-  let dot = 0;
-  let normA = 0;
-  let normB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-  if (!normA || !normB) return 0;
-  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
-}
-
-function averageVectors(vectors: number[][]): number[] {
-  if (!vectors.length) return [];
-  const avg = new Array(vectors[0].length).fill(0);
-  for (const v of vectors) {
-    for (let i = 0; i < v.length; i++) {
-      avg[i] += v[i];
-    }
-  }
-  for (let i = 0; i < avg.length; i++) {
-    avg[i] /= vectors.length;
-  }
-  return avg;
-}
-
-async function ensureItemEmbeddings(): Promise<void> {
-  const items = await Item.find({ embedding: { $exists: false }, description: { $exists: true } });
-  for (const item of items) {
-    try {
-      const vector = await embed(item.description);
-      item.embedding = vector;
-      await item.save();
-    } catch (err) {
-      console.error("Failed to embed item", item.id, err);
-    }
-  }
-}
-
-export async function getRecommendedItems(wallet: string, top = 5) {
-  await ensureItemEmbeddings();
-
-  const user = await User.findOne({ walletAddress: wallet });
+  const user = await User.findOne({ walletAddress: wallet }).lean();
   if (!user || !user.interactions) {
-    const popular = await Item.find({}).sort({ sharesSold: -1 }).limit(top * 2);
-    return popular.sort(() => Math.random() - 0.5).slice(0, top);
+    return allItems.slice(0, top);
   }
-
-  const historyIds = Object.entries(user.interactions)
-    .filter(([, d]: any) => d.favorited || d.purchased)
+  const interactedIds = Object.entries(user.interactions)
+    .filter(([, d]: any) => (d.favorited || 0) > 0 || (d.purchased || 0) > 0)
     .map(([id]) => id);
 
-  if (!historyIds.length) {
-    const popular = await Item.find({}).sort({ sharesSold: -1 }).limit(top * 2);
-    return popular.sort(() => Math.random() - 0.5).slice(0, top);
+  const itemMap = new Map(allItems.map((it: any) => [String(it._id), it]));
+  const vectors: number[][] = [];
+  for (const id of interactedIds) {
+    const item = itemMap.get(id);
+    if (item && Array.isArray(item.embedding) && item.embedding.length) {
+      vectors.push(item.embedding);
+    }
   }
 
-  const historyItems = await Item.find({ _id: { $in: historyIds }, embedding: { $exists: true } });
-  if (!historyItems.length) {
-    const popular = await Item.find({}).sort({ sharesSold: -1 }).limit(top * 2);
-    return popular.sort(() => Math.random() - 0.5).slice(0, top);
+  if (!vectors.length) {
+    return allItems.slice(0, top);
   }
 
-  const userProfile = averageVectors(historyItems.map((i: any) => i.embedding));
+  const userVector = averageVectors(vectors);
+  if (!userVector.length) {
+    return allItems.slice(0, top);
+  }
 
-  const candidates = await Item.find({ embedding: { $exists: true } });
-  const scored = candidates.map((item: any) => ({
-    item,
-    score: cosineSimilarity(userProfile, item.embedding || []),
-  }));
+  const scored = allItems.map((it: any) => {
+    const score = cosineSimilarity(userVector, it.embedding || []);
+    return { item: it, score };
+  });
 
-  scored.sort(
-    (a: { score: number }, b: { score: number }) => b.score - a.score
-  );
-  return scored.slice(0, top).map((s: { item: any }) => s.item);
+  return scored
+    .sort((a, b) => b.score - a.score)
+    .slice(0, top)
+    .map((s) => s.item);
 }
