@@ -1,23 +1,19 @@
-# SodaPop Horse Marketplace
+# Grey MarketPlace
 
 ## Overview
-SodaPop is a full‑stack dApp for fractional racehorse ownership. It combines an
-ERC‑1155 smart contract with a React frontend and an Express backend. Owners can
-create new horse offerings with a share price and total supply, while investors
-purchase and track shares using their crypto wallet. A built‑in chatbot powered
-by OpenAI helps users navigate the app.
+Grey MarketPlace is a decentralized assistant for creating, buying, and selling both fixed and variable items. Examples include fractional shares of property, entire assets such as horses, or consumables like apples. The platform lets creators upload item data and images, then mints smart contracts to manage ownership and transfers.
 
-Technology stack:
-- **Frontend:** React + TypeScript + Chakra UI
-- **Backend:** Node.js + TypeScript + Express + MongoDB
-- **Smart Contracts:** Solidity (HorseToken & HorseFactory)
-- **Storage:** IPFS via nft.storage for horse metadata
-- **Chatbot:** OpenAI‑powered assistant
+## Key Features
+- **Share Type Toggle** – switch between variable (tradable) and fixed (one-time use) assets
+- **Fractional Ownership** – divide an asset into shares
+- **Asset Upload** – add item metadata and images
+- **Image Support** – store images on IPFS/Pinata
+- **Smart Contract Minting** – deploy ERC-1155 tokens for each asset
 
----
+## How It Works
+Variable assets are resellable tokens that can be fractionally owned. Fixed assets represent consumable or burnable items that cannot be resold once used. Grey MarketPlace uses smart contracts to track each type and enforce the correct behavior.
 
 ## Folder Structure
-
 ```
 .
 ├── frontend/                ← React-TypeScript app
@@ -27,7 +23,7 @@ Technology stack:
 │       ├── components/      ← Chat UI and dashboard widgets
 │       ├── context/         ← App context (authentication, wallet)
 │       ├── hooks/           ← Custom React hooks
-│       ├── pages/           ← CreateHorse, HorseList, HorseDetail, etc.
+│       ├── pages/           ← Create, List, Detail, etc.
 │       ├── styles/          ← Global CSS or Tailwind config
 │       ├── App.tsx          ← Root component
 │       └── main.tsx         ← React entrypoint
@@ -48,7 +44,7 @@ Technology stack:
 │   ├── .env                 ← Actual secrets (never commit)
 │   └── .env.example         ← Template for environment variables
 │
-├── contracts/              ← Solidity contracts (HorseToken, HorseFactory)
+├── contracts/              ← Solidity contracts
 ├── migrations/             ← Truffle migration scripts
 ├── shared/                  ← Shared TypeScript types or utilities
 │   └── types/
@@ -58,42 +54,40 @@ Technology stack:
 └── README.md
 ```
 
----
-
 ## Getting Started
 
 ### Prerequisites
-- **Node.js & npm** (v 16+ recommended)  
-- **Git** (to clone and version-control the project)  
-- **MetaMask** (or another EIP-1193 wallet) installed in your browser for testing on local or testnet  
+- **Node.js & npm** (v16+ recommended)
+- **Git** (to clone and version-control the project)
+- **MetaMask** (or another EIP-1193 wallet) installed in your browser
 - (Optional) An RPC provider account (e.g. Infura, Alchemy) to connect to Ethereum or other EVM chains
 
 ### Clone & Install
 
 1. Open a terminal and run:
    ```bash
-   git clone https://github.com/your-username/SodaPop.git
-   cd SodaPop
+   git clone https://github.com/your-username/GreyMarketPlace.git
+   cd GreyMarketPlace
    ```
-
 2. Install dependencies for both apps:
    ```bash
    ./setup.sh
    ```
-
 3. Copy `.env.example` to `.env` and fill in your secrets.
-
-4. Start the development servers (frontend and backend) in parallel:
+4. Start the development servers:
    ```bash
    ./dev.sh
    ```
    - Frontend runs at **http://localhost:5173**
    - Backend listens on **http://localhost:4000**
 
----
+## Tech Stack
+- **Frontend:** React, TypeScript, Chakra UI
+- **Backend:** Node.js, TypeScript, Express, MongoDB
+- **Smart Contracts:** Solidity, Hardhat, Ethers.js
+- **Storage:** IPFS/Pinata for asset metadata and images
 
 ## Environment Variables
-
 Copy `.env.example` to `.env` and fill in:
 - **PORT** — Backend port (default `4000`)
 - **OPENAI_API_KEY** — OpenAI key for the chatbot
@@ -105,43 +99,31 @@ Copy `.env.example` to `.env` and fill in:
 - **VITE_NFT_STORAGE_KEY** — API key for nft.storage uploads
 - **VITE_HORSE_FACTORY_ADDRESS** — Deployed HorseFactory address
 
----
-
 ## Deployment
 
-1. **Frontend**  
+1. **Frontend**
    ```bash
    cd frontend
    npm run build
    ```
    - Deploy the `dist/` folder to Vercel, Netlify, etc.
 
-2. **Backend**  
+2. **Backend**
    ```bash
    cd backend
    npx tsc
    ```
    - Run with PM2, Docker, or serverless.
 
----
-
 ## Auto Improvement
-
-This repository includes an experimental script that calls OpenAI to suggest
-refinements to any JavaScript or TypeScript file. Provide a file path and the
-script will overwrite it with the model's response.
+This repository includes an experimental script that calls OpenAI to suggest refinements to any JavaScript or TypeScript file. Provide a file path and the script will overwrite it with the model's response.
 
 ```bash
 npm run improve -- path/to/file.ts
 ```
-
 Set `OPENAI_API_KEY` in your environment before running.
 
-
----
-
 ## Contributing
-
 1. Fork the repo and create a branch:
    ```bash
    git checkout -b feature/your-feature
@@ -152,8 +134,6 @@ Set `OPENAI_API_KEY` in your environment before running.
    git push origin feature/your-feature
    ```
 3. Open a pull request with a clear description.
-
----
 
 ## License
 
