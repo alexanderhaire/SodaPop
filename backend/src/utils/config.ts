@@ -8,3 +8,4 @@ export const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
 
 export const JWT_SECRET = process.env.JWT_SECRET || "replace_with_strong_secret";
 export const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
+export const MONGO_URI = process.env.MONGO_URI || "";
