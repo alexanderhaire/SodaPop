@@ -294,7 +294,7 @@ const HorseDetail: React.FC = () => {
             isDisabled={mintedSoFar !== null && mintedSoFar > 0}
             isLoading={isPreparingAll || isMintingAll}
           >
-            Buy Entire Horse
+            Buy Entire Item
           </Button>
         </Tooltip>
       </HStack>
