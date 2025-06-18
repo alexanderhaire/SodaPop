@@ -7,6 +7,7 @@ import authRoutes from "./controllers/auth";
 import portfolioRoutes from "./controllers/portfolio";
 import chatRoutes from "./controllers/chat";
 import marketplaceRoutes from "./controllers/marketplaceController";
+import itemsRoutes from "./routes/items";
 import leaderboardRoutes from "./controllers/leaderboard";
 import eventRoutes from "./routes/events";
 import { PORT, JWT_SECRET } from "./utils/config";
@@ -51,6 +52,9 @@ app.use("/api", requireAuth, portfolioRoutes);
 
 // Mount chat routes (protected)
 app.use("/api/chat", requireAuth, chatRoutes);
+
+// Item creation routes (protected)
+app.use("/api/items", requireAuth, itemsRoutes);
 
 // Marketplace endpoints (protected)
 app.use("/api/marketplace", requireAuth, marketplaceRoutes);

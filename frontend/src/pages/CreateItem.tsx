@@ -99,13 +99,22 @@ const CreateItem = () => {
         return;
       }
 
-      if (!description.trim()) {
-        toast({
-          status: "error",
-          title: "Missing description",
-          description: "Please provide a description for your item.",
-        });
-        return;
+      let finalType = itemType;
+      let finalDesc = description;
+      if ((!finalType || !finalDesc) && imagePreview) {
+        try {
+          const res = await axios.post("/items/describe", { image: imagePreview });
+          if (!finalType) {
+            finalType = res.data.title;
+            setItemType(res.data.title);
+          }
+          if (!finalDesc) {
+            finalDesc = res.data.description;
+            setDescription(res.data.description);
+          }
+        } catch (err) {
+          console.error("Failed to generate defaults:", err);
+        }
       }
 
       const metadataURI = await uploadToIPFS();
@@ -113,10 +122,10 @@ const CreateItem = () => {
 
       await axios.post("/items", {
         pricingMode,
-        itemType,
+        itemType: finalType,
         sharePrice: sharePriceWei.toString(),
         totalShares,
-        description,
+        description: finalDesc,
         image: metadataURI,
       });
 
