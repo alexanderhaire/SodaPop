@@ -7,6 +7,7 @@ import authRoutes from "./controllers/auth";
 import portfolioRoutes from "./controllers/portfolio";
 import chatRoutes from "./controllers/chat";
 import marketplaceRoutes from "./controllers/marketplaceController";
+import leaderboardRoutes from "./controllers/leaderboard";
 import { PORT, JWT_SECRET } from "./utils/config";
 
 dotenv.config();
@@ -51,6 +52,9 @@ app.use("/api/chat", requireAuth, chatRoutes);
 
 // Marketplace endpoints (protected)
 app.use("/api/marketplace", requireAuth, marketplaceRoutes);
+
+// Leaderboard endpoints (unprotected)
+app.use("/api", leaderboardRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend listening on http://localhost:${PORT}`);

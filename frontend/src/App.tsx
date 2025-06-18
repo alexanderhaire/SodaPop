@@ -19,6 +19,7 @@ import ItemList from "./pages/ItemList";
 import ItemDetail from "./pages/ItemDetail";
 import Chatbot from "./pages/Chatbot";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
+import LeaderboardPage from "./pages/Leaderboard";
 
 const App: React.FC = () => {
   const { address, isConnected } = useAccount();
@@ -47,13 +48,21 @@ const App: React.FC = () => {
             Items
           </Button>
 
-          <Button
-            variant="grey"
-            onClick={() => navigate("/analytics")}
-            size="sm"
-          >
-            Analytics
-          </Button>
+        <Button
+          variant="grey"
+          onClick={() => navigate("/analytics")}
+          size="sm"
+        >
+          Analytics
+        </Button>
+
+        <Button
+          variant="grey"
+          onClick={() => navigate("/leaderboard")}
+          size="sm"
+        >
+          Leaderboard
+        </Button>
 
           <HStack spacing={3}>
             {isConnected && address ? (
@@ -93,6 +102,7 @@ const App: React.FC = () => {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/items/:id" element={<ItemDetail />} />
         <Route path="/analytics" element={<AnalyticsDashboard />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
       </Routes>
 
       <Box position="fixed" bottom={4} right={4} zIndex={10}>
