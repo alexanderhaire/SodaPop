@@ -20,6 +20,8 @@ import ItemDetail from "./pages/ItemDetail";
 import Chatbot from "./pages/Chatbot";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import MyItems from "./pages/MyItems";
+import BoughtItems from "./pages/BoughtItems";
+import SoldItems from "./pages/SoldItems";
 
 const App: React.FC = () => {
   const { address, isConnected } = useAccount();
@@ -54,6 +56,22 @@ const App: React.FC = () => {
             size="sm"
           >
             My Items
+          </Button>
+
+          <Button
+            variant="grey"
+            onClick={() => navigate("/bought")}
+            size="sm"
+          >
+            My Bought Items
+          </Button>
+
+          <Button
+            variant="grey"
+            onClick={() => navigate("/sold")}
+            size="sm"
+          >
+            My Sold Items
           </Button>
 
           <Button
@@ -101,6 +119,8 @@ const App: React.FC = () => {
         <Route path="/create" element={<CreateItem />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/my-items" element={<MyItems />} />
+        <Route path="/bought" element={<BoughtItems />} />
+        <Route path="/sold" element={<SoldItems />} />
         <Route path="/items/:id" element={<ItemDetail />} />
         <Route path="/analytics" element={<AnalyticsDashboard />} />
       </Routes>
