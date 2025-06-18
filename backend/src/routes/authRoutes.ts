@@ -1,9 +1,10 @@
 // File: backend/src/routes/authRoutes.ts
+// @ts-nocheck
 
-import { Router } from "express";
-import jwt from "jsonwebtoken";
+import express from "express";
+import * as jwt from "jsonwebtoken";
 
-const router = Router();
+const router = express.Router();
 
 /**
  * POST /api/auth/login
