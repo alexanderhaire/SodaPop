@@ -231,8 +231,10 @@ const HorseDetail: React.FC = () => {
   };
 
   return (
-    <Box p={6} maxW="700px" mx="auto">
-      <Heading mb={4}>{horse.name}</Heading>
+    <Box p={6} maxW="700px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
+      <Heading mb={4} color="purple.600">
+        {horse.name}
+      </Heading>
       <Image
         src={`/images/${horse.id}.png`}
         alt={horse.name}
@@ -276,7 +278,7 @@ const HorseDetail: React.FC = () => {
 
       <HStack mt={6} spacing={4}>
         <Button
-          colorScheme="teal"
+          colorScheme="purple"
           onClick={handleBuyShare}
           isLoading={isPreparing || isMinting}
         >
@@ -287,7 +289,7 @@ const HorseDetail: React.FC = () => {
           isDisabled={mintedSoFar === 0 || mintedSoFar === null}
         >
           <Button
-            colorScheme="teal"
+            colorScheme="purple"
             variant="outline"
             size="sm"
             onClick={handleBuyEntireHorse}

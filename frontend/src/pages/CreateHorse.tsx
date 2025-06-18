@@ -104,8 +104,10 @@ const CreateHorse = () => {
   };
 
   return (
-    <Box p={6}>
-      <Heading size="lg" mb={4}>Create New Offering</Heading>
+    <Box p={6} maxW="600px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
+      <Heading size="lg" mb={4} color="purple.600">
+        Create New Offering
+      </Heading>
       <VStack spacing={4} align="stretch">
 
         <Box>
@@ -143,7 +145,7 @@ const CreateHorse = () => {
           )}
         </Box>
 
-        <Button colorScheme="teal" onClick={handleSubmit}>
+        <Button colorScheme="purple" onClick={handleSubmit}>
           Create
         </Button>
       </VStack>
