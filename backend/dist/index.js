@@ -11,9 +11,13 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const auth_1 = __importDefault(require("./controllers/auth"));
 const portfolio_1 = __importDefault(require("./controllers/portfolio"));
 const chat_1 = __importDefault(require("./controllers/chat"));
+const sodabot_1 = __importDefault(require("./routes/sodabot"));
 const marketplaceController_1 = __importDefault(require("./controllers/marketplaceController"));
+const items_1 = __importDefault(require("./routes/items"));
 const leaderboard_1 = __importDefault(require("./controllers/leaderboard"));
+const events_1 = __importDefault(require("./routes/events"));
 const config_1 = require("./utils/config");
+const eventMonitor_1 = require("./jobs/eventMonitor");
 dotenv_1.default.config();
 // Connect to MongoDB if a URI is provided
 if (config_1.MONGO_URI) {
@@ -54,10 +58,18 @@ app.use("/api/auth", auth_1.default);
 app.use("/api", requireAuth, portfolio_1.default);
 // Mount chat routes (protected)
 app.use("/api/chat", requireAuth, chat_1.default);
+// Item creation routes (protected)
+app.use("/api/items", requireAuth, items_1.default);
 // Marketplace endpoints (protected)
 app.use("/api/marketplace", requireAuth, marketplaceController_1.default);
+// Events endpoint (protected)
+app.use("/api", requireAuth, events_1.default);
 // Leaderboard endpoint (unprotected)
 app.use("/api/leaderboard", leaderboard_1.default);
+// SodaBot chat endpoint (unprotected)
+app.use("/api/sodabot", sodabot_1.default);
 app.listen(config_1.PORT, () => {
     console.log(`🚀 Backend listening on http://localhost:${config_1.PORT}`);
 });
+// Start background cron jobs
+(0, eventMonitor_1.startEventMonitor)();
