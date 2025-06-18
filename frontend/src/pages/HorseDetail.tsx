@@ -10,6 +10,9 @@ import {
   VStack,
   Divider,
   Button,
+  HStack,
+  Tooltip,
+  useToast,
 } from "@chakra-ui/react";
 import axios from "axios";
 import {
@@ -25,6 +28,7 @@ import horses from "../mocks/horses.json";
 const HorseDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { address } = useAccount();
+  const toast = useToast();
   const tokenId = id ? horses.findIndex((h) => h.id === id) : -1;
 
   const [maxSupply, setMaxSupply] = useState<number | null>(null);
@@ -52,6 +56,36 @@ const HorseDetail: React.FC = () => {
     isLoading: isMinting,
     error: mintError,
   } = useContractWrite(config);
+
+  // Prepare transaction to buy entire horse
+  const {
+    config: buyAllConfig,
+    isLoading: isPreparingAll,
+    error: prepareAllError,
+    isSuccess: canBuyAll,
+  } = usePrepareContractWrite({
+    address: HORSE_TOKEN_ADDRESS,
+    abi: horseTokenABI,
+    functionName: "mint",
+    args: [address, tokenId, maxSupply ?? 0],
+    overrides:
+      maxSupply !== null
+        ? { value: BigInt(maxSupply) * parseEther("0.00001") }
+        : undefined,
+    chainId: 11155420,
+    enabled: Boolean(
+      address &&
+      tokenId >= 0 &&
+      maxSupply !== null &&
+      mintedSoFar !== null &&
+      mintedSoFar === 0
+    ),
+  });
+  const {
+    writeAsync: mintAllAsync,
+    isLoading: isMintingAll,
+    error: mintAllError,
+  } = useContractWrite(buyAllConfig);
 
   // 1) Fetch on-chain maxSupply and mintedSoFar → compute remainingSupply
   useEffect(() => {
@@ -164,6 +198,38 @@ const HorseDetail: React.FC = () => {
     }
   };
 
+  const handleBuyEntireHorse = async () => {
+    if (!address) {
+      alert("Please connect your wallet first.");
+      return;
+    }
+    if (isPreparingAll) {
+      alert("Preparing transaction—please wait.");
+      return;
+    }
+    if (prepareAllError) {
+      console.error("Prepare error:", prepareAllError);
+      alert("Failed to prepare transaction.");
+      return;
+    }
+    if (!canBuyAll || !mintAllAsync) {
+      alert("Transaction not ready yet.");
+      return;
+    }
+    try {
+      const tx = await mintAllAsync();
+      toast({
+        title: "You now own 100% of this horse!",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (err) {
+      console.error("Mint failed:", err);
+      alert("Transaction failed.");
+    }
+  };
+
   return (
     <Box p={6} maxW="700px" mx="auto">
       <Heading mb={4}>{horse.name}</Heading>
@@ -208,14 +274,30 @@ const HorseDetail: React.FC = () => {
         )}
       </VStack>
 
-      <Button
-        colorScheme="teal"
-        mt={6}
-        onClick={handleBuyShare}
-        isLoading={isPreparing || isMinting}
-      >
-        Buy Share for 0.00001 ETH
-      </Button>
+      <HStack mt={6} spacing={4}>
+        <Button
+          colorScheme="teal"
+          onClick={handleBuyShare}
+          isLoading={isPreparing || isMinting}
+        >
+          Buy Share for 0.00001 ETH
+        </Button>
+        <Tooltip
+          label="Some shares already owned"
+          isDisabled={mintedSoFar === 0 || mintedSoFar === null}
+        >
+          <Button
+            colorScheme="teal"
+            variant="outline"
+            size="sm"
+            onClick={handleBuyEntireHorse}
+            isDisabled={mintedSoFar !== null && mintedSoFar > 0}
+            isLoading={isPreparingAll || isMintingAll}
+          >
+            Buy Entire Horse
+          </Button>
+        </Tooltip>
+      </HStack>
     </Box>
   );
 };
