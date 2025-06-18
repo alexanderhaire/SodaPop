@@ -20,7 +20,6 @@ import "./index.css";
 const optimismSepolia: Chain = {
   id: 11155420,
   name: "Optimism Sepolia",
-  network: "optimism-sepolia",
   nativeCurrency: {
     name: "Sepolia ETH",
     symbol: "ETH",

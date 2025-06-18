@@ -60,7 +60,7 @@ const CreateItem = () => {
       sharePrice: form.sharePrice,
       totalShares: form.totalShares,
       pricingMode,
-    });
+    } as any);
 
     return metadata.url;
   };
@@ -95,7 +95,11 @@ const CreateItem = () => {
         image: metadataURI,
       });
 
-      const provider = new ethers.BrowserProvider(window.ethereum);
+      const provider =
+        typeof window !== "undefined" && (window as any).ethereum
+          ? new ethers.BrowserProvider((window as any).ethereum)
+          : undefined;
+      if (!provider) throw new Error("Ethereum provider not found");
       const signer = await provider.getSigner();
       const horseToken = new ethers.Contract(
         HORSE_TOKEN_ADDRESS,
