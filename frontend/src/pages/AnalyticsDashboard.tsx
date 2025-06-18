@@ -1,12 +1,28 @@
 import {
-    Box,
-    Heading,
-    Text,
-    VStack,
-    Badge,
-    Progress,
-    Spinner,
-  } from "@chakra-ui/react";
+  Box,
+  Heading,
+  Text,
+  VStack,
+  Badge,
+  Progress,
+  Spinner,
+  SimpleGrid,
+} from "@chakra-ui/react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
   import { useEffect, useState } from "react";
   import { useAccount, useWalletClient } from "wagmi";
   import { readContract } from "@wagmi/core";
@@ -24,9 +40,47 @@ import {
   const AnalyticsDashboard: React.FC = () => {
     const { address } = useAccount();
     const { data: walletClient } = useWalletClient();
-    const [horses, setHorses] = useState<HorseStats[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+  const [horses, setHorses] = useState<HorseStats[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const variableAssets = [
+    {
+      name: "SodaPop (Horse)",
+      history: [12, 12.5, 13, 13.5, 14],
+      shares: 40,
+    },
+    {
+      name: "Beachfront Bungalow (Real Estate)",
+      history: [4.5, 4.6, 4.8, 5.0, 5.2],
+      shares: 30,
+    },
+    {
+      name: "Abstract Waves (Art)",
+      history: [1.2, 1.3, 1.35, 1.4, 1.5],
+      shares: 30,
+    },
+  ];
+
+  const dates = ["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"];
+
+  const lineData = dates.map((d, idx) => ({
+    name: d,
+    ...variableAssets.reduce((acc, asset) => {
+      acc[asset.name] = asset.history[idx];
+      return acc;
+    }, {} as Record<string, number>),
+  }));
+
+  const barData = variableAssets.map((asset) => ({
+    name: asset.name,
+    price: asset.history[asset.history.length - 1],
+  }));
+
+  const pieData = variableAssets.map((asset) => ({
+    name: asset.name,
+    value: asset.shares,
+  }));
   
     useEffect(() => {
       const fetchAnalytics = async () => {
@@ -72,7 +126,7 @@ import {
     }, [address, walletClient]);
   
     return (
-      <Box p={6} maxW="800px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
+      <Box p={6} maxW="1200px" mx="auto" bg="#f8f8f8" borderRadius="lg" boxShadow="lg">
         <Heading size="lg" mb={4} color="purple.600">
           Your Horse Share Analytics
         </Heading>
@@ -89,6 +143,7 @@ import {
                 borderRadius="lg"
                 p={4}
                 boxShadow="lg"
+                bg="white"
               >
                 <Heading size="md">{horse.name}</Heading>
                 <Text>
@@ -106,6 +161,57 @@ import {
             ))}
           </VStack>
         )}
+
+        <Box mt={10}>
+          <Heading size="lg" mb={4} color="gray.700">
+            Variable Asset Analytics
+          </Heading>
+          {variableAssets.length === 0 ? (
+            <Text>No share data available. Create a variable asset to get started.</Text>
+          ) : (
+            <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
+              <Box bg="white" p={4} boxShadow="md" borderRadius="md">
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={lineData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+                    <XAxis dataKey="name" stroke="#000" />
+                    <YAxis stroke="#000" />
+                    <Tooltip />
+                    <Legend />
+                    {variableAssets.map((asset, idx) => (
+                      <Line key={asset.name} type="monotone" dataKey={asset.name} stroke={idx % 2 ? '#555' : '#000'} />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </Box>
+
+              <Box bg="white" p={4} boxShadow="md" borderRadius="md">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={barData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ccc" />
+                    <XAxis dataKey="name" stroke="#000" />
+                    <YAxis stroke="#000" />
+                    <Tooltip />
+                    <Bar dataKey="price" fill="#555" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+
+              <Box bg="white" p={4} boxShadow="md" borderRadius="md">
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie dataKey="value" data={pieData} outerRadius={100} fill="#888" label>
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index % 2 ? '#555' : '#000'} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Box>
+            </SimpleGrid>
+          )}
+        </Box>
       </Box>
     );
   };
