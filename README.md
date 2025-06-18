@@ -1,13 +1,18 @@
-# DeFi Advisor
+# SodaPop Horse Marketplace
 
 ## Overview
-AI-powered desktop web app:
-- **Frontend:** React + TypeScript + chat UI
-- **Backend:** Node.js + TypeScript + Express
-- **Conversational AI:** Routes that call an LLM to build structured trade instructions
-- **DeFi integrations:** Wrappers for Uniswap, Aave, Compound, Yearn, 1inch, etc.
+SodaPop is a full‑stack dApp for fractional racehorse ownership. It combines an
+ERC‑1155 smart contract with a React frontend and an Express backend. Owners can
+create new horse offerings with a share price and total supply, while investors
+purchase and track shares using their crypto wallet. A built‑in chatbot powered
+by OpenAI helps users navigate the app.
 
-The AI agent acts as a conversational financial advisor—collecting user goals and risk preferences, recommending an on-chain strategy across multiple protocols, and, upon user approval, executing live transactions.
+Technology stack:
+- **Frontend:** React + TypeScript + Chakra UI
+- **Backend:** Node.js + TypeScript + Express + MongoDB
+- **Smart Contracts:** Solidity (HorseToken & HorseFactory)
+- **Storage:** IPFS via nft.storage for horse metadata
+- **Chatbot:** OpenAI‑powered assistant
 
 ---
 
@@ -19,11 +24,11 @@ The AI agent acts as a conversational financial advisor—collecting user goals 
 │   ├── public/              ← Static assets
 │   └── src/
 │       ├── api/             ← Axios wrappers for backend endpoints
-│       ├── components/      ← Chat UI, Dashboard widgets, etc.
-│       ├── context/         ← App context (authentication, chat state)
-│       ├── hooks/           ← Custom React hooks (useChat, useWallet, etc.)
-│       ├── pages/           ← Top-level pages (Login, Dashboard, ChatPage, Settings)
-│       ├── styles/          ← Global CSS/SCSS or Tailwind config
+│       ├── components/      ← Chat UI and dashboard widgets
+│       ├── context/         ← App context (authentication, wallet)
+│       ├── hooks/           ← Custom React hooks
+│       ├── pages/           ← CreateHorse, HorseList, HorseDetail, etc.
+│       ├── styles/          ← Global CSS or Tailwind config
 │       ├── App.tsx          ← Root component
 │       └── main.tsx         ← React entrypoint
 │   ├── tsconfig.json
@@ -32,17 +37,19 @@ The AI agent acts as a conversational financial advisor—collecting user goals 
 │
 ├── backend/                 ← Node.js + TypeScript server
 │   ├── src/
-│   │   ├── ai/              ← LLM wrappers and function-calling logic
-│   │   ├── controllers/     ← Route handlers (chat, portfolio, executeTrade)
-│   │   ├── defi/            ← Protocol SDK wrappers (Uniswap, Aave, 1inch, etc.)
-│   │   ├── services/        ← Business logic (portfolio optimizer, risk checks)
-│   │   ├── utils/           ← Helpers (logging, error handling, formatting)
+│   │   ├── ai/              ← OpenAI helpers and personalization engine
+│   │   ├── controllers/     ← Express route handlers
+│   │   ├── models/          ← Mongoose models
+│   │   ├── routes/          ← API routes
+│   │   ├── utils/           ← Helpers (logging, config)
 │   │   └── index.ts         ← Server entrypoint
 │   ├── tsconfig.json
 │   ├── package.json
 │   ├── .env                 ← Actual secrets (never commit)
 │   └── .env.example         ← Template for environment variables
 │
+├── contracts/              ← Solidity contracts (HorseToken, HorseFactory)
+├── migrations/             ← Truffle migration scripts
 ├── shared/                  ← Shared TypeScript types or utilities
 │   └── types/
 │       └── index.ts
@@ -69,48 +76,34 @@ The AI agent acts as a conversational financial advisor—collecting user goals 
    cd SodaPop
    ```
 
-2. **Frontend**  
+2. Install dependencies for both apps:
    ```bash
-   cd frontend
-   npm install
-   npm run dev
+   ./setup.sh
    ```
-   - The development server will start at **http://localhost:5173**.  
 
-3. **Backend**  
-   (Open a new terminal)
+3. Copy `.env.example` to `.env` and fill in your secrets.
+
+4. Start the development servers (frontend and backend) in parallel:
    ```bash
-   cd backend
-   npm install
+   ./dev.sh
    ```
-   - Copy `.env.example` to `.env` and fill in your secrets (`OPENAI_API_KEY`, `RPC_URL`, etc.).  
-   - In `backend/package.json`, ensure you have:
-     ```json
-     "scripts": {
-       "dev": "ts-node src/index.ts"
-     }
-     ```
-   - Then run:
-     ```bash
-     npm run dev
-     ```
-   - The server will listen on **http://localhost:4000**.
+   - Frontend runs at **http://localhost:5173**
+   - Backend listens on **http://localhost:4000**
 
 ---
 
 ## Environment Variables
 
-- **OPENAI_API_KEY** — Your OpenAI API key for LLM access  
-- **RPC_URL** — RPC endpoint (Infura, Alchemy, etc.) for on-chain calls  
-- **1INCH_API_KEY** — (If needed) API key for 1inch aggregator  
-- **AAVE_API_KEY**, **COMPOUND_API_KEY**, etc. — Other protocol keys as needed  
-
-Copy `.env.example` to `.env` before running the backend.
-
----
-
-## Next Steps
-
+Copy `.env.example` to `.env` and fill in:
+- **PORT** — Backend port (default `4000`)
+- **OPENAI_API_KEY** — OpenAI key for the chatbot
+- **ALCHEMY_API_URL** — RPC endpoint for contract calls
+- **DEPLOYER_PRIVATE_KEY** — Private key for contract deployment
+- **JWT_SECRET** — Secret used to sign JWTs
+- **JWT_EXPIRES_IN** — Token lifetime (e.g. `1d`)
+- **MONGO_URI** — MongoDB connection string
+- **VITE_NFT_STORAGE_KEY** — API key for nft.storage uploads
+- **VITE_HORSE_FACTORY_ADDRESS** — Deployed HorseFactory address
 
 ---
 
