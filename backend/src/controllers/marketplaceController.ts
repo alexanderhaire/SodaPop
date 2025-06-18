@@ -1,5 +1,9 @@
 import { Router, Request, Response } from "express";
-import { getRankedItems, trackUserInteraction } from "../ai/personalizationEngine";
+import {
+  getRankedItems,
+  trackUserInteraction,
+} from "../ai/personalizationEngine";
+import { getRecommendedItems } from "../ai/embeddingService";
 
 const router = Router();
 
@@ -28,6 +32,19 @@ router.post("/interactions", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Track interaction error:", err);
     res.status(500).json({ error: "Failed to track interaction" });
+  }
+});
+
+// GET /api/marketplace/recommendations?wallet=0x123&top=5
+router.get("/recommendations", async (req: Request, res: Response) => {
+  const wallet = (req.query.wallet as string) || "";
+  const top = parseInt(req.query.top as string) || 5;
+  try {
+    const items = await getRecommendedItems(wallet, top);
+    res.json(items);
+  } catch (err) {
+    console.error("Recommendation error:", err);
+    res.status(500).json({ error: "Failed to fetch recommendations" });
   }
 });
 

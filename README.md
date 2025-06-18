@@ -117,10 +117,11 @@ These assets are consumed, delivered, or redeemed upon purchase and cannot be re
 3. Copy `.env.example` to `.env` and fill in your secrets.
 4. Start the development servers:
    ```bash
-   ./dev.sh
-   ```
-   - Frontend runs at **http://localhost:5173**
-   - Backend listens on **http://localhost:4000**
+  ./dev.sh
+  ```
+  - Frontend runs at **http://localhost:5173**
+  - Backend listens on **http://localhost:4000**
+  - Personalized recommendations available at `/api/marketplace/recommendations`
 5. Compile and deploy the smart contracts (example uses Goerli):
    ```bash
    npx hardhat compile

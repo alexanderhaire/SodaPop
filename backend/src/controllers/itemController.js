@@ -1,5 +1,6 @@
 // File: backend/src/controllers/itemController.js
 const Item = require("../models/item");
+const { ensureItemEmbedding } = require("../ai/embeddingService");
 
 exports.getAllItems = async (req, res) => {
   try {
@@ -23,6 +24,12 @@ exports.createItem = async (req, res) => {
   try {
     const newItem = new Item(req.body);
     await newItem.save();
+    // Generate and store embedding for the new item
+    try {
+      await ensureItemEmbedding(newItem._id);
+    } catch (err) {
+      console.error("Embedding generation failed:", err);
+    }
     res.status(201).json(newItem);
   } catch (err) {
     res.status(400).json({ error: err.message });
