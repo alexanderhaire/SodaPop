@@ -15,7 +15,7 @@
     "trainer": "Dave Johnson",
     "record": "15 starts – 7 wins – 4 places",
     "earnings": "$303,800",
-    "image": "https://via.placeholder.com/150"
+    "image": "/images/ironcomet.png"
   },
   {
     "id": "thunderbolt",
@@ -24,6 +24,6 @@
     "trainer": "Amanda Lee",
     "record": "10 starts – 3 wins – 6 places",
     "earnings": "$123,750",
-    "image": "https://via.placeholder.com/150"
+    "image": "/images/ironcomet.png"
   }
 ]
