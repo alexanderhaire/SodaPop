@@ -14,7 +14,7 @@ import {
 } from "@chakra-ui/react";
 import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
-import { NFTStorage, File as NFTFile } from "nft.storage";
+import { uploadToNftStorageV2 } from "../utils/nftStorage";
 import { ethers } from "ethers";
 import {
   HORSE_TOKEN_ADDRESS,
@@ -57,23 +57,9 @@ const CreateItem = () => {
   const uploadToIPFS = async () => {
     if (!imageFile) return "";
 
-    const nftClient = new NFTStorage({
-      token: import.meta.env.VITE_NFT_STORAGE_KEY || "",
-    });
-
     try {
-      const buffer = await imageFile.arrayBuffer();
-      const metadata = await nftClient.store({
-        name: imageFile.name || "Uploaded Image",
-        description,
-        image: new NFTFile([buffer], imageFile.name, { type: imageFile.type }),
-        itemType,
-        sharePrice: form.sharePrice,
-        totalShares: form.totalShares,
-        pricingMode,
-      } as any);
-
-      return metadata.url;
+      const cid = await uploadToNftStorageV2(imageFile);
+      return `ipfs://${cid}`;
     } catch (err) {
       console.error("Failed to upload to IPFS:", err);
       return "";
