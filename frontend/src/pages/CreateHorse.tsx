@@ -6,7 +6,10 @@ import {
   Button,
   VStack,
   FormLabel,
-  useToast
+  useToast,
+  Flex,
+  Switch,
+  HStack
 } from "@chakra-ui/react";
 import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +22,8 @@ const CreateHorse = () => {
     sharePrice: "",
     totalShares: ""
   });
+
+  const [pricingMode, setPricingMode] = useState<'fixed' | 'variable'>('fixed');
 
   const navigate = useNavigate();
 
@@ -49,7 +54,10 @@ const CreateHorse = () => {
     });
 
     const metadata = await nftClient.store({
-      image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type })
+      image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type }),
+      sharePrice: form.sharePrice,
+      totalShares: form.totalShares,
+      pricingMode
     });
 
     return metadata.url;
@@ -79,6 +87,7 @@ const CreateHorse = () => {
         sharePrice: sharePriceWei.toString(),
         totalShares,
         image: metadataURI,
+        pricingMode,
       });
 
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -100,6 +109,25 @@ const CreateHorse = () => {
 
   return (
     <Box p={6}>
+      <Flex justify="flex-end" mb={4}>
+        <HStack>
+          <FormLabel htmlFor="pricingMode" mb="0">
+            Fixed
+          </FormLabel>
+          <Switch
+            id="pricingMode"
+            isChecked={pricingMode === "variable"}
+            onChange={() =>
+              setPricingMode(
+                pricingMode === "fixed" ? "variable" : "fixed"
+              )
+            }
+          />
+          <FormLabel htmlFor="pricingMode" mb="0">
+            Variable
+          </FormLabel>
+        </HStack>
+      </Flex>
       <Heading size="lg" mb={4}>Create New Offering</Heading>
       <VStack spacing={4} align="stretch">
 
