@@ -27,15 +27,18 @@ router.post(
         "";
       const pref = wallet ? await getWalletPreferences(wallet) : "";
 
-      // Send the single user message to the OpenAI chat completion endpoint.
-      // If you need full history, collect previous messages on the frontend and send them here.
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages: [
-            ...(pref ? [{ role: "system", content: pref }] : []),
-            { role: message.role, content: message.content } as any,
-          ],
-        });
+      const systemPrompt = pref
+        ? `User interactions: ${pref}`
+        : "You are a knowledgeable DeFi assistant.";
+      const trimmed = systemPrompt.slice(-1000); // cap to avoid huge prompts
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: trimmed },
+          { role: message.role, content: message.content } as any,
+        ],
+      });
 
       const choice = completion.choices?.[0];
       if (!choice || !choice.message?.content) {

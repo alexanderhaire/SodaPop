@@ -49,20 +49,34 @@ const CreateItem = () => {
   const uploadToIPFS = async () => {
     if (!imageFile) return "";
 
+    if (!itemType || !form.sharePrice || !form.totalShares) {
+      throw new Error("Missing metadata fields");
+    }
+
     const nftClient = new NFTStorage({
       token: import.meta.env.VITE_NFT_STORAGE_KEY || "",
     });
 
-    const metadata = await nftClient.store({
+    const meta = {
       name: imageFile.name || "Uploaded Image",
       image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type }),
       itemType,
       sharePrice: form.sharePrice,
       totalShares: form.totalShares,
       pricingMode,
-    } as any);
+    } as any;
 
-    return metadata.url;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const metadata = await nftClient.store(meta);
+        console.log("IPFS CID", metadata.ipnft);
+        return metadata.url;
+      } catch (err) {
+        if (i === 2) throw err;
+        await new Promise((res) => setTimeout(res, 2 ** i * 1000));
+      }
+    }
+    return "";
   };
 
   const handleSubmit = async () => {

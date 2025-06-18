@@ -6,6 +6,11 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// Variable Asset Lifecycle:
+// 1. Deployed with capped supply for each token ID
+// 2. Shares are minted to creator and can be traded freely
+// 3. Tokens are never burned by the contract
+
 contract HorseToken is ERC1155, Ownable {
     uint256 public totalSupply;
     mapping(uint256 => uint256) public horseSupply;
@@ -38,6 +43,7 @@ constructor(
 }
 
     function mint(address to, uint256 id, uint256 amount) public {
+        require(horseSupply[id] + amount <= maxSupply[id], "Exceeds cap");
         _mint(to, id, amount, "");
         totalSupply += amount;
         horseSupply[id] += amount;
@@ -53,6 +59,7 @@ constructor(
 
     function createHorseOffering(uint256 tokenId, uint256 sharePrice, uint256 totalShares) external onlyOwner {
         require(offerings[tokenId].totalShares == 0, "Horse already exists");
+        require(totalShares > 0 && sharePrice > 0, "Invalid params");
         maxSupply[tokenId] = totalShares;
         uint256 companyStake = (totalShares * 10) / 100;
         _mint(msg.sender, tokenId, companyStake, "");

@@ -31,15 +31,27 @@ export async function trackUserInteraction(
   await user.save();
 }
 
+const DECAY_RATE = 0.1; // larger means faster decay per day
+
 function scoreInteraction(data: any): number {
   if (!data) return 0;
-  const recency = data.lastInteraction ? new Date(data.lastInteraction).getTime() : 0;
-  return (
+  const now = Date.now();
+  const last = data.lastInteraction ? new Date(data.lastInteraction).getTime() : now;
+  const days = (now - last) / (1000 * 60 * 60 * 24);
+  const decay = Math.exp(-DECAY_RATE * days);
+  const base =
     (data.viewed || 0) +
     2 * (data.favorited || 0) +
-    3 * (data.purchased || 0) +
-    recency / 1000000000000
-  );
+    5 * (data.purchased || 0); // heavier purchase weight
+  return base * decay;
+}
+
+function walletAffinity(interactions: Record<string, any>): number {
+  let purchases = 0;
+  for (const d of Object.values(interactions)) {
+    purchases += (d as any).purchased || 0;
+  }
+  return purchases;
 }
 
 export async function getRankedItems(wallet: string): Promise<any[]> {
@@ -48,9 +60,10 @@ export async function getRankedItems(wallet: string): Promise<any[]> {
   const user = await User.findOne({ walletAddress: wallet }).lean();
   if (!user || !user.interactions) return items;
   const interactions: any = user.interactions;
+  const affinity = walletAffinity(interactions);
   return items.sort((a: any, b: any) => {
-    const sa = scoreInteraction(interactions[a._id]);
-    const sb = scoreInteraction(interactions[b._id]);
+    const sa = scoreInteraction(interactions[a._id]) * (1 + affinity / 10);
+    const sb = scoreInteraction(interactions[b._id]) * (1 + affinity / 10);
     return sb - sa;
   });
 }

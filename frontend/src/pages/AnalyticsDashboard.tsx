@@ -7,9 +7,9 @@ import {
     Progress,
     Spinner,
   } from "@chakra-ui/react";
-  import { useEffect, useState } from "react";
+  import { useEffect, useState, useRef } from "react";
   import { useAccount, useWalletClient } from "wagmi";
-  import { readContract } from "@wagmi/core";
+import { readContracts } from "@wagmi/core";
   import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
   
   interface ItemStats {
@@ -31,9 +31,18 @@ import {
     // Placeholder for variable pricing assets.
     const [variableAssets, setVariableAssets] = useState<any[]>([]);
   
+    const cacheRef = useRef<{ ts: number; data: ItemStats[] } | null>(null);
+
     useEffect(() => {
       const fetchAnalytics = async () => {
         if (!address || !walletClient) return;
+
+        if (cacheRef.current && Date.now() - cacheRef.current.ts < 60000) {
+          setItems(cacheRef.current.data);
+          setVariableAssets(cacheRef.current.data);
+          return;
+        }
+
         setLoading(true);
         setError("");
   
@@ -48,28 +57,27 @@ import {
           const data = await res.json();
   
           // Optional: Fetch on-chain balances
-          const updated = await Promise.all(
-            data.map(async (item: any, idx: number) => {
-  if (!walletClient?.chain?.id) throw new Error("Missing chainId in walletClient");
-  const chainId = walletClient?.chain?.id;
-  if (!chainId) throw new Error("Missing chainId");
-              const raw = await readContract(undefined as any, {
-                address: HORSE_TOKEN_ADDRESS,
-                abi: horseTokenABI,
-                functionName: "balanceOf",
-                args: [address, idx],
-                chainId,
-              });
-  
-              return {
-                ...item,
-                my_share: Number(raw),
-              };
-            })
-          );
+          const chainId = walletClient?.chain?.id;
+          if (!chainId) throw new Error("Missing chainId");
+
+          const balanceCalls = data.map((_item: any, idx: number) => ({
+            address: HORSE_TOKEN_ADDRESS,
+            abi: horseTokenABI,
+            functionName: "balanceOf",
+            args: [address, idx],
+            chainId,
+          }));
+
+          const results = await readContracts({ contracts: balanceCalls });
+
+          const updated = data.map((item: any, idx: number) => ({
+            ...item,
+            my_share: Number(results[idx].result || 0),
+          }));
 
           setItems(updated);
           setVariableAssets(updated);
+          cacheRef.current = { ts: Date.now(), data: updated };
         } catch (err) {
     console.error("❌ Failed to load earnings:", err);
           setError("Failed to load earnings.");
@@ -87,7 +95,10 @@ import {
           <Heading size="lg" mb={4} color="purple.600">
             Your Item Share Analytics
           </Heading>
-          {variableAssets.length === 0 ? (
+          {error && <Text color="red.500">{error}</Text>}
+          {loading ? (
+            <Spinner />
+          ) : variableAssets.length === 0 ? (
             <Text>No share data available. Create a variable asset to get started.</Text>
           ) : (
             <VStack spacing={4} align="stretch">

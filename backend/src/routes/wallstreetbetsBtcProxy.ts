@@ -4,14 +4,21 @@ export default {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
 
-    // Option 1: Redirect to your app's actual domain (mirror)
-    if (url.hostname === "wall-street-bets.btc") {
-      return Response.redirect("https://wallstreetbets.app", 301);
+    // normalize trailing slashes
+    if (url.pathname !== "/" && url.pathname.endsWith("/")) {
+      url.pathname = url.pathname.replace(/\/+$/, "");
     }
 
-    // Option 2: Resolve .btc via btc.us (BNS Gateway)
+    // direct .btc routing
+    if (url.hostname === "wall-street-bets.btc") {
+      console.log("redirecting to app domain");
+      return Response.redirect(`https://wallstreetbets.app${url.pathname}`, 301);
+    }
+
+    // fallback to BNS gateway
     if (url.hostname.endsWith(".btc")) {
-      const target = \`https://\${url.hostname}.btc.us\${url.pathname}\`;
+      const target = `https://${url.hostname}.btc.us${url.pathname}`;
+      console.log("gateway redirect", target);
       return Response.redirect(target, 302);
     }
 
