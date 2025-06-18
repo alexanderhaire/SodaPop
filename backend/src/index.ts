@@ -10,13 +10,9 @@ import chatRoutes from "./controllers/chat";
 import marketplaceRoutes from "./controllers/marketplaceController";
 import itemsRoutes from "./routes/items";
 import leaderboardRoutes from "./controllers/leaderboard";
-<<<<<<< HEAD
 import eventRoutes from "./routes/events";
-import { PORT, JWT_SECRET } from "./utils/config";
-import { startEventMonitor } from "./jobs/eventMonitor";
-=======
 import { PORT, JWT_SECRET, MONGO_URI } from "./utils/config";
->>>>>>> origin/4xtxcq-codex/modify-chat-controller-to-load-last-5-exchanges
+import { startEventMonitor } from "./jobs/eventMonitor";
 
 dotenv.config();
 
