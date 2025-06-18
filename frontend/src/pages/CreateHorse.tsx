@@ -19,6 +19,8 @@ const CreateHorse = () => {
     sharePrice: "",
     totalShares: ""
   });
+  // Pricing mode for horse creation; 0 denotes default fixed pricing
+  const pricingMode = 0;
 
   const navigate = useNavigate();
 
@@ -81,9 +83,10 @@ const CreateHorse = () => {
       const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
 
       await axios.post("/horses", {
-        sharePrice: sharePriceWei.toString(),
-        totalShares,
-        image: metadataURI,
+        image: new NFTFile(imageFile, imageFile.name, { type: imageFile.type }),
+        sharePrice: form.sharePrice,
+        totalShares: form.totalShares,
+        pricingMode,
       });
 
       const provider = new ethers.BrowserProvider(window.ethereum);
