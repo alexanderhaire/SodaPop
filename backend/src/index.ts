@@ -8,7 +8,9 @@ import portfolioRoutes from "./controllers/portfolio";
 import chatRoutes from "./controllers/chat";
 import marketplaceRoutes from "./controllers/marketplaceController";
 import leaderboardRoutes from "./controllers/leaderboard";
+import eventRoutes from "./routes/events";
 import { PORT, JWT_SECRET } from "./utils/config";
+import { startEventMonitor } from "./jobs/eventMonitor";
 
 dotenv.config();
 
@@ -53,9 +55,15 @@ app.use("/api/chat", requireAuth, chatRoutes);
 // Marketplace endpoints (protected)
 app.use("/api/marketplace", requireAuth, marketplaceRoutes);
 
+// Events endpoint (protected)
+app.use("/api", requireAuth, eventRoutes);
+
 // Leaderboard endpoint (unprotected)
 app.use("/api/leaderboard", leaderboardRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend listening on http://localhost:${PORT}`);
 });
+
+// Start background cron jobs
+startEventMonitor();
