@@ -22,6 +22,8 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import MyItems from "./pages/MyItems";
 import BoughtItems from "./pages/BoughtItems";
 import SoldItems from "./pages/SoldItems";
+import MyBoughtItems from "./pages/MyBoughtItems";
+import MySoldItems from "./pages/MySoldItems";
 
 const App: React.FC = () => {
   const { address, isConnected } = useAccount();
@@ -121,6 +123,8 @@ const App: React.FC = () => {
         <Route path="/my-items" element={<MyItems />} />
         <Route path="/bought" element={<BoughtItems />} />
         <Route path="/sold" element={<SoldItems />} />
+        <Route path="/my-bought-items" element={<MyBoughtItems />} />
+        <Route path="/my-sold-items" element={<MySoldItems />} />
         <Route path="/items/:id" element={<ItemDetail />} />
         <Route path="/analytics" element={<AnalyticsDashboard />} />
       </Routes>
