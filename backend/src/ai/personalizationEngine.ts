@@ -4,6 +4,16 @@ const User = require("../models/user");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Item = require("../models/item");
 
+const HALF_LIFE_DAYS = 7; // recent interactions should weigh more over ~1 week
+const DECAY_LAMBDA =
+  Math.log(2) / (HALF_LIFE_DAYS * 24 * 60 * 60 * 1000); // ms based decay
+
+function applyDecay(value: number, last: Date | undefined, now: number): number {
+  if (!value || !last) return 0;
+  const delta = now - new Date(last).getTime();
+  return value * Math.exp(-DECAY_LAMBDA * delta);
+}
+
 export type InteractionAction = "viewed" | "favorited" | "purchased";
 
 export async function trackUserInteraction(
@@ -23,23 +33,44 @@ export async function trackUserInteraction(
       favorited: 0,
       purchased: 0,
       lastInteraction: new Date(),
+      viewScore: 0,
+      purchaseScore: 0,
+      lastView: new Date(),
+      lastPurchase: new Date(),
     };
   }
-  user.interactions[itemId][action] =
-    (user.interactions[itemId][action] || 0) + 1;
-  user.interactions[itemId].lastInteraction = new Date();
+  const now = new Date();
+  const data = user.interactions[itemId];
+  // ensure new fields exist for legacy records
+  data.viewScore = data.viewScore || 0;
+  data.purchaseScore = data.purchaseScore || 0;
+  data.lastView = data.lastView || now;
+  data.lastPurchase = data.lastPurchase || now;
+  switch (action) {
+    case "viewed":
+      data.viewed = (data.viewed || 0) + 1;
+      data.viewScore = applyDecay(data.viewScore || 0, data.lastView, now.getTime()) + 1;
+      data.lastView = now;
+      break;
+    case "purchased":
+      data.purchased = (data.purchased || 0) + 1;
+      data.purchaseScore = applyDecay(data.purchaseScore || 0, data.lastPurchase, now.getTime()) + 1;
+      data.lastPurchase = now;
+      break;
+    case "favorited":
+      data.favorited = (data.favorited || 0) + 1;
+      break;
+  }
+  data.lastInteraction = now;
   await user.save();
 }
 
-function scoreInteraction(data: any): number {
+function scoreInteraction(data: any, now = Date.now()): number {
   if (!data) return 0;
-  const recency = data.lastInteraction ? new Date(data.lastInteraction).getTime() : 0;
-  return (
-    (data.viewed || 0) +
-    2 * (data.favorited || 0) +
-    3 * (data.purchased || 0) +
-    recency / 1000000000000
-  );
+  const views = applyDecay(data.viewScore || 0, data.lastView, now);
+  const purchases = applyDecay(data.purchaseScore || 0, data.lastPurchase, now);
+  const favorites = data.favorited || 0;
+  return views + 2 * favorites + 3 * purchases;
 }
 
 export async function getRankedItems(wallet: string): Promise<any[]> {
@@ -49,26 +80,32 @@ export async function getRankedItems(wallet: string): Promise<any[]> {
   if (!user || !user.interactions) return items;
   const interactions: any = user.interactions;
   return items.sort((a: any, b: any) => {
-    const sa = scoreInteraction(interactions[a._id]);
-    const sb = scoreInteraction(interactions[b._id]);
+    const now = Date.now();
+    const sa = scoreInteraction(interactions[a._id], now);
+    const sb = scoreInteraction(interactions[b._id], now);
     return sb - sa;
   });
+}
+
+export async function getWalletAffinities(wallet: string): Promise<Record<string, number>> {
+  const user = await User.findOne({ walletAddress: wallet }).lean();
+  if (!user || !user.interactions) return {};
+  const now = Date.now();
+  const scores: Record<string, number> = {};
+  for (const [itemId, data] of Object.entries(user.interactions)) {
+    scores[itemId] = scoreInteraction(data, now);
+  }
+  return scores;
 }
 
 export async function getWalletPreferences(wallet: string): Promise<string> {
   const user = await User.findOne({ walletAddress: wallet }).lean();
   if (!user || !user.interactions) return "";
+  const now = Date.now();
   const entries = Object.entries(user.interactions) as [string, any][];
-  entries.sort(
-    (a, b) => scoreInteraction(b[1]) - scoreInteraction(a[1])
-  );
+  entries.sort((a, b) => scoreInteraction(b[1], now) - scoreInteraction(a[1], now));
   return entries
     .slice(0, 3)
-    .map(
-      ([itemId, d]) =>
-        `Item ${itemId} viewed ${d.viewed || 0} times, favorited ${
-          d.favorited || 0
-        }, purchased ${d.purchased || 0}`
-    )
+    .map(([itemId, d]) => `Item ${itemId} score ${scoreInteraction(d, now).toFixed(2)}`)
     .join("; ");
 }
