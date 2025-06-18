@@ -197,4 +197,4 @@ Set `OPENAI_API_KEY` in your environment before running.
 
 ## License
 
-This project is MIT-licensed. See [LICENSE](LICENSE) for details.
+This project is licensed under the Business Source License 1.1. See [LICENSE](LICENSE) for details.
