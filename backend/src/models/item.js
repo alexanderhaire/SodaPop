@@ -14,6 +14,8 @@ const ItemSchema = new mongoose.Schema({
   },
   totalShares: { type: Number, required: true },
   sharesSold: { type: Number, default: 0 },
+  // Vector embedding for recommendation engine
+  embedding: { type: [Number], default: undefined },
 });
 
 module.exports = mongoose.model("Item", ItemSchema);
