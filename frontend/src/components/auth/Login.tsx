@@ -76,13 +76,13 @@ const Login: React.FC = () => {
           </Text>
         )}
 
-        <Button colorScheme="blue" onClick={handleLogin} isLoading={loading}>
+        <Button variant="cta" onClick={handleLogin} isLoading={loading}>
           Login
         </Button>
 
         <Text fontSize="sm">
           Don’t have an account?{" "}
-          <Link as={RouterLink} to="/register" color="blue.500">
+          <Link as={RouterLink} to="/register" color="#000">
             Register
           </Link>
         </Text>

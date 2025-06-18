@@ -173,7 +173,7 @@ const CreateHorse = () => {
           </HStack>
         </Flex>
 
-        <Button colorScheme="purple" onClick={handleSubmit}>
+        <Button variant="cta" onClick={handleSubmit}>
           Create
         </Button>
       </VStack>

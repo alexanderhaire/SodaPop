@@ -243,7 +243,7 @@ const HorseDetail: React.FC = () => {
 
   return (
     <Box p={6} maxW="700px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
-      <Heading mb={4} color="purple.600">
+      <Heading mb={4} color="#000">
         {horse.name}
       </Heading>
       <Image
@@ -281,11 +281,7 @@ const HorseDetail: React.FC = () => {
       </VStack>
 
       <HStack mt={6} spacing={4}>
-        <Button
-          colorScheme="purple"
-          onClick={handleBuyShare}
-          isLoading={isPreparing || isMinting}
-        >
+        <Button variant="cta" onClick={handleBuyShare} isLoading={isPreparing || isMinting}>
           Buy Share for 0.00001 ETH
         </Button>
         <Tooltip
@@ -293,8 +289,7 @@ const HorseDetail: React.FC = () => {
           isDisabled={remainingSupply !== null && remainingSupply > 0}
         >
           <Button
-            colorScheme="purple"
-            variant="outline"
+            variant="grey"
             size="sm"
             onClick={handleBuyMax}
             isDisabled={remainingSupply !== null && remainingSupply <= 0}

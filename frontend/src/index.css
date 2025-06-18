@@ -1,9 +1,9 @@
 body {
   margin: 0;
   font-family: 'Poppins', sans-serif;
-  background: linear-gradient(120deg, #f0f4ff, #fce2ff);
+  background: #f0f0f0;
   min-height: 100vh;
-  color: #333;
+  color: #222;
 }
 
 * {
@@ -23,15 +23,16 @@ body {
   margin-bottom: 0.5rem;
 }
 
+
 .chatbot .user {
   text-align: right;
-  color: #3182ce;
+  color: #000;
   margin-bottom: 0.25rem;
 }
 
 .chatbot .bot {
   text-align: left;
-  color: #805ad5;
+  color: #333;
   margin-bottom: 0.25rem;
 }
 
@@ -43,7 +44,7 @@ body {
 }
 
 .chatbot button {
-  background: #805ad5;
+  background: #000;
   color: white;
   border: none;
   padding: 0.5rem 1rem;
@@ -53,5 +54,5 @@ body {
 }
 
 .chatbot button:hover {
-  background: #6b46c1;
+  background: #222;
 }
