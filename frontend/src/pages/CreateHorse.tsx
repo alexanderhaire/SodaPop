@@ -5,7 +5,8 @@ import {
   Input,
   Button,
   VStack,
-  FormLabel
+  FormLabel,
+  useToast
 } from "@chakra-ui/react";
 import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
@@ -15,12 +16,11 @@ import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
 
 const CreateHorse = () => {
   const [form, setForm] = useState({
-    name: "",
-    age: "",
-    trainer: "",
-    record: "",
-    earnings: ""
+    sharePrice: "",
+    totalShares: ""
   });
+  // Pricing mode for horse creation; 0 denotes default fixed pricing
+  const pricingMode = 0;
 
   const navigate = useNavigate();
 
@@ -51,23 +51,43 @@ const CreateHorse = () => {
     });
 
     const metadata = await nftClient.store({
-      name: form.name,
-      description: `Fractional ownership of racehorse ${form.name}`,
-      image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type }),
-      properties: {
-        trainer: form.trainer,
-        record: form.record,
-        earnings: form.earnings
-      }
+      name: imageFile.name || "Uploaded Image",
+      image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type })
     });
 
     return metadata.url;
   };
 
+  const toast = useToast();
+
   const handleSubmit = async () => {
     try {
+      if (!imageFile) {
+        alert("Please upload an image before submitting.");
+        return;
+      }
+      const sharePrice = Number(form.sharePrice);
+      const totalShares = Number(form.totalShares);
+
+      if (sharePrice <= 0 || totalShares <= 0) {
+        toast({
+          status: "error",
+          title: "Invalid input",
+          description: "Share price and total shares must be greater than 0",
+        });
+        return;
+      }
+
       const metadataURI = await uploadToIPFS();
-      await axios.post("/horses", form);
+
+      const sharePriceWei = ethers.parseEther(form.sharePrice || "0");
+
+      await axios.post("/horses", {
+        image: new NFTFile(imageFile, imageFile.name, { type: imageFile.type }),
+        sharePrice: form.sharePrice,
+        totalShares: form.totalShares,
+        pricingMode,
+      });
 
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
@@ -77,11 +97,7 @@ const CreateHorse = () => {
         signer
       );
 
-      const totalShares = 10000;
-      const sharePrice = 100;
-      const tokenId = Math.floor(Date.now() / 1000);
 
-      const tx = await horseToken.createHorseOffering(tokenId, sharePrice, totalShares);
       await tx.wait();
 
       navigate("/dashboard");
@@ -91,24 +107,35 @@ const CreateHorse = () => {
   };
 
   return (
-    <Box p={6}>
-      <Heading size="lg" mb={4}>Create New Racehorse</Heading>
+    <Box p={6} maxW="600px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
+      <Heading size="lg" mb={4} color="purple.600">
+        Create New Offering
+      </Heading>
       <VStack spacing={4} align="stretch">
-        {["name", "age", "trainer", "record", "earnings"].map((field) => (
-          <Box key={field}>
-            <FormLabel htmlFor={field}>
-              {field.charAt(0).toUpperCase() + field.slice(1)}
-            </FormLabel>
-            <Input
-              name={field}
-              value={(form as any)[field]}
-              onChange={handleChange}
-            />
-          </Box>
-        ))}
 
         <Box>
-          <FormLabel>Horse Image</FormLabel>
+          <FormLabel htmlFor="sharePrice">Share Price (ETH)</FormLabel>
+          <Input
+            name="sharePrice"
+            type="number"
+            step="any"
+            value={form.sharePrice}
+            onChange={handleChange}
+          />
+        </Box>
+
+        <Box>
+          <FormLabel htmlFor="totalShares">Total Shares</FormLabel>
+          <Input
+            name="totalShares"
+            type="number"
+            value={form.totalShares}
+            onChange={handleChange}
+          />
+        </Box>
+
+        <Box>
+          <FormLabel>Image</FormLabel>
           <Input type="file" accept="image/*" onChange={handleImageUpload} />
           {imagePreview && (
             <Box mt={2}>
@@ -121,7 +148,7 @@ const CreateHorse = () => {
           )}
         </Box>
 
-        <Button colorScheme="teal" onClick={handleSubmit}>
+        <Button colorScheme="purple" onClick={handleSubmit}>
           Create
         </Button>
       </VStack>

@@ -1,6 +1,6 @@
 // File: frontend/src/utils/wagmiClient.ts
 
-import { configureChains, createClient } from "wagmi";
+import { configureChains, createConfig } from "wagmi";
 import { publicProvider } from "wagmi/providers/public";
 import { goerli } from "wagmi/chains"; // replace with sepolia or localhost if needed
 
@@ -9,7 +9,7 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
   [publicProvider()]
 );
 
-export const wagmiClient = createClient({
+export const wagmiClient = createConfig({
   autoConnect: true,
   publicClient,
   webSocketPublicClient,

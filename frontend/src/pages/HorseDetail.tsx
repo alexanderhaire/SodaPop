@@ -10,7 +10,19 @@ import {
   VStack,
   Divider,
   Button,
+  HStack,
+  Tooltip,
+  useToast,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  AccordionPanel,
+  AccordionIcon,
+  FormControl,
+  FormLabel,
+  Input,
 } from "@chakra-ui/react";
+import { ethers } from "ethers";
 import axios from "axios";
 import {
   useAccount,
@@ -25,14 +37,14 @@ import horses from "../mocks/horses.json";
 const HorseDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { address } = useAccount();
+  const toast = useToast();
   const tokenId = id ? horses.findIndex((h) => h.id === id) : -1;
 
   const [maxSupply, setMaxSupply] = useState<number | null>(null);
   const [mintedSoFar, setMintedSoFar] = useState<number | null>(null);
   const [remainingSupply, setRemainingSupply] = useState<number | null>(null);
   const [sharesOwned, setSharesOwned] = useState<number | null>(null);
-  const [sharePrice, setSharePrice] = useState<number | null>(null);
-  const [offeringShares, setOfferingShares] = useState<number | null>(null);
+
 
   // Prepare mint transaction
   const {
@@ -54,6 +66,35 @@ const HorseDetail: React.FC = () => {
     isLoading: isMinting,
     error: mintError,
   } = useContractWrite(config);
+
+  // Prepare transaction to buy remaining shares
+  const {
+    config: buyMaxConfig,
+    isLoading: isPreparingMax,
+    error: prepareMaxError,
+    isSuccess: canBuyMax,
+  } = usePrepareContractWrite({
+    address: HORSE_TOKEN_ADDRESS,
+    abi: horseTokenABI,
+    functionName: "mint",
+    args: [address, tokenId, remainingSupply ?? 0],
+    overrides:
+      remainingSupply !== null
+        ? { value: BigInt(remainingSupply) * parseEther("0.00001") }
+        : undefined,
+    chainId: 11155420,
+    enabled: Boolean(
+      address &&
+      tokenId >= 0 &&
+      remainingSupply !== null &&
+      remainingSupply > 0
+    ),
+  });
+  const {
+    writeAsync: buyMaxAsync,
+    isLoading: isBuyingMax,
+    error: buyMaxError,
+  } = useContractWrite(buyMaxConfig);
 
   // 1) Fetch on-chain maxSupply and mintedSoFar → compute remainingSupply
   useEffect(() => {
@@ -188,9 +229,59 @@ const HorseDetail: React.FC = () => {
     }
   };
 
+  const handleBuyMax = async () => {
+    if (!address) {
+      alert("Please connect your wallet first.");
+      return;
+    }
+    if (isPreparingMax) {
+      alert("Preparing transaction—please wait.");
+      return;
+    }
+    if (prepareMaxError) {
+      console.error("Prepare error:", prepareMaxError);
+      alert("Failed to prepare transaction.");
+      return;
+    }
+    if (!canBuyMax || !buyMaxAsync) {
+      alert("Transaction not ready yet.");
+      return;
+    }
+    try {
+      const tx = await buyMaxAsync();
+      toast({
+        title: `Purchased remaining shares!`,
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+    } catch (err) {
+      console.error("Mint failed:", err);
+      alert("Transaction failed.");
+    }
+  };
+
+  const projectedReturn = React.useMemo(() => {
+    if (!calcShares || !calcEarnings || !maxSupply) return "0";
+    try {
+      const earningsWei = ethers.parseEther(calcEarnings);
+      const resultWei = (earningsWei * BigInt(Number(calcShares))) / BigInt(maxSupply);
+      return ethers.formatEther(resultWei);
+    } catch {
+      return "0";
+    }
+  }, [calcShares, calcEarnings, maxSupply]);
+
+  const ownershipPercent = React.useMemo(() => {
+    if (!calcShares || !maxSupply) return 0;
+    return (Number(calcShares) / maxSupply) * 100;
+  }, [calcShares, maxSupply]);
+
   return (
-    <Box p={6} maxW="700px" mx="auto">
-      <Heading mb={4}>{horse.name}</Heading>
+    <Box p={6} maxW="700px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
+      <Heading mb={4} color="purple.600">
+        {horse.name}
+      </Heading>
       <Image
         src={`/images/${horse.id}.png`}
         alt={horse.name}
@@ -242,14 +333,70 @@ const HorseDetail: React.FC = () => {
         )}
       </VStack>
 
-      <Button
-        colorScheme="teal"
-        mt={6}
-        onClick={handleBuyShare}
-        isLoading={isPreparing || isMinting}
-      >
-        Buy Share for 0.00001 ETH
-      </Button>
+      <HStack mt={6} spacing={4}>
+        <Button
+          colorScheme="purple"
+          onClick={handleBuyShare}
+          isLoading={isPreparing || isMinting}
+        >
+          Buy Share for 0.00001 ETH
+        </Button>
+        <Tooltip
+          label="No shares remaining"
+          isDisabled={remainingSupply !== null && remainingSupply > 0}
+        >
+          <Button
+            colorScheme="purple"
+            variant="outline"
+            size="sm"
+            onClick={handleBuyMax}
+            isDisabled={remainingSupply !== null && remainingSupply <= 0}
+            isLoading={isPreparingMax || isBuyingMax}
+          >
+            Buy Max
+          </Button>
+        </Tooltip>
+      </HStack>
+
+      <Accordion allowToggle mt={4}>
+        <AccordionItem>
+          <AccordionButton>
+            <Box flex="1" textAlign="left">
+              Projected Earnings
+            </Box>
+            <AccordionIcon />
+          </AccordionButton>
+          <AccordionPanel pb={4}>
+            <VStack spacing={3} align="stretch">
+              <FormControl>
+                <FormLabel>Number of Shares</FormLabel>
+                <Input
+                  type="number"
+                  value={calcShares}
+                  onChange={(e) => setCalcShares(e.target.value)}
+                />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Projected Horse Earnings (ETH)</FormLabel>
+                <Input
+                  type="number"
+                  value={calcEarnings}
+                  onChange={(e) => setCalcEarnings(e.target.value)}
+                />
+              </FormControl>
+              {calcShares && calcEarnings && maxSupply !== null && (
+                <Text>
+                  You would earn {projectedReturn} ETH (
+                  {ownershipPercent.toFixed(2)}% ownership)
+                </Text>
+              )}
+              <Text fontSize="sm" color="gray.500">
+                This is an estimate. Actual earnings may vary.
+              </Text>
+            </VStack>
+          </AccordionPanel>
+        </AccordionItem>
+      </Accordion>
     </Box>
   );
 };

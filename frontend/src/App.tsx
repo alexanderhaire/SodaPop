@@ -37,9 +37,9 @@ const App: React.FC = () => {
         as="header"
         px={4}
         py={2}
-        borderBottom="1px"
-        borderColor="gray.200"
-        bg="white"
+        bgGradient="linear(to-r, purple.500, pink.400)"
+        color="white"
+        boxShadow="md"
       >
         <HStack justify="space-between">
           <Heading size="md" cursor="pointer" onClick={() => navigate("/")}>
@@ -48,8 +48,9 @@ const App: React.FC = () => {
 
           <Button
             variant="ghost"
+            color="white"
             onClick={() => navigate("/")}
-            _hover={{ bg: "gray.100" }}
+            _hover={{ bg: "whiteAlpha.300" }}
             size="sm"
           >
             Horses
@@ -57,8 +58,9 @@ const App: React.FC = () => {
 
           <Button
             variant="ghost"
+            color="white"
             onClick={() => navigate("/analytics")}
-            _hover={{ bg: "gray.100" }}
+            _hover={{ bg: "whiteAlpha.300" }}
             size="sm"
           >
             Analytics
@@ -70,8 +72,13 @@ const App: React.FC = () => {
                 <Text fontSize="sm" color="gray.600">
                   Connected: {formatAddress(address)}
                 </Text>
-                <Button size="sm" onClick={() => disconnect()}>
-                  Disconnect Wallet
+                <Button
+                  size="sm"
+                  colorScheme="whiteAlpha"
+                  variant="outline"
+                  onClick={() => disconnect()}
+                >
+                  Disconnect
                 </Button>
               </>
             ) : (
@@ -83,12 +90,19 @@ const App: React.FC = () => {
                     connectLoading && connector.id === connectors?.[0]?.id
                   }
                   size="sm"
+                  colorScheme="whiteAlpha"
+                  variant="outline"
                 >
                   Connect Wallet
                 </Button>
               ))
             )}
-            <Button size="sm" onClick={handleLogout}>
+            <Button
+              size="sm"
+              colorScheme="whiteAlpha"
+              variant="outline"
+              onClick={handleLogout}
+            >
               Logout
             </Button>
           </HStack>
