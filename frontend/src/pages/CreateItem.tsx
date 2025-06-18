@@ -1,4 +1,5 @@
 import { useState } from "react";
+// Asset creation page chooses between variable (ERC-1155) and fixed (ERC-721) logic
 import {
   Box,
   Heading,
@@ -15,7 +16,12 @@ import axios from "../utils/axiosConfig";
 import { useNavigate } from "react-router-dom";
 import { NFTStorage, File as NFTFile } from "nft.storage";
 import { ethers } from "ethers";
-import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
+import {
+  HORSE_TOKEN_ADDRESS,
+  horseTokenABI,
+  FIXED_TOKEN_ADDRESS,
+  fixedTokenABI,
+} from "../utils/contractConfig";
 
 const CreateItem = () => {
   const [form, setForm] = useState({
@@ -23,6 +29,7 @@ const CreateItem = () => {
     totalShares: ""
   });
   const [itemType, setItemType] = useState<string>("");
+  // "variable" mints ERC-1155 shares; "fixed" mints burnable ERC-721 tokens
   const [pricingMode, setPricingMode] = useState<'fixed' | 'variable'>('fixed');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -119,13 +126,24 @@ const CreateItem = () => {
           : undefined;
       if (!provider) throw new Error("Ethereum provider not found");
       const signer = await provider.getSigner();
-      const horseToken = new ethers.Contract(
-        HORSE_TOKEN_ADDRESS,
-        horseTokenABI,
-        signer
-      );
-
-      const tx = await horseToken.createHorse(totalShares, sharePriceWei, metadataURI);
+      let tx;
+      if (pricingMode === "variable") {
+        // Variable assets mint ERC-1155 fractional tokens that remain tradeable
+        const variableToken = new ethers.Contract(
+          HORSE_TOKEN_ADDRESS,
+          horseTokenABI,
+          signer
+        );
+        tx = await variableToken.createHorse(totalShares, sharePriceWei, metadataURI);
+      } else {
+        // Fixed assets mint ERC-721 tokens which can later be burned
+        const fixedToken = new ethers.Contract(
+          FIXED_TOKEN_ADDRESS,
+          fixedTokenABI,
+          signer
+        );
+        tx = await fixedToken.mintFixed(await signer.getAddress(), metadataURI);
+      }
       await tx.wait();
 
       navigate("/dashboard");
