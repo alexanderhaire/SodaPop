@@ -1,5 +1,4 @@
 "use strict";
-// src/index.ts
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -8,11 +7,21 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const auth_1 = __importDefault(require("./controllers/auth"));
 const portfolio_1 = __importDefault(require("./controllers/portfolio"));
 const chat_1 = __importDefault(require("./controllers/chat"));
+const marketplaceController_1 = __importDefault(require("./controllers/marketplaceController"));
+const leaderboard_1 = __importDefault(require("./controllers/leaderboard"));
 const config_1 = require("./utils/config");
 dotenv_1.default.config();
+// Connect to MongoDB if a URI is provided
+if (config_1.MONGO_URI) {
+    mongoose_1.default
+        .connect(config_1.MONGO_URI)
+        .then(() => console.log("✅ Connected to MongoDB"))
+        .catch((err) => console.error("Mongo connection error:", err));
+}
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
@@ -24,7 +33,6 @@ app.get("/api/health", (_req, res) => {
 app.get("/api/hello", (_req, res) => {
     res.json({ message: "Hello from SodaPop backend!" });
 });
-// Middleware to protect routes with JWT
 function requireAuth(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -46,7 +54,10 @@ app.use("/api/auth", auth_1.default);
 app.use("/api", requireAuth, portfolio_1.default);
 // Mount chat routes (protected)
 app.use("/api/chat", requireAuth, chat_1.default);
-// Start server
+// Marketplace endpoints (protected)
+app.use("/api/marketplace", requireAuth, marketplaceController_1.default);
+// Leaderboard endpoint (unprotected)
+app.use("/api/leaderboard", leaderboard_1.default);
 app.listen(config_1.PORT, () => {
     console.log(`🚀 Backend listening on http://localhost:${config_1.PORT}`);
 });

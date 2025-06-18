@@ -2,15 +2,24 @@ import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 import authRoutes from "./controllers/auth";
 import portfolioRoutes from "./controllers/portfolio";
 import chatRoutes from "./controllers/chat";
 import marketplaceRoutes from "./controllers/marketplaceController";
 import leaderboardRoutes from "./controllers/leaderboard";
-import { PORT, JWT_SECRET } from "./utils/config";
+import { PORT, JWT_SECRET, MONGO_URI } from "./utils/config";
 
 dotenv.config();
+
+// Connect to MongoDB if a URI is provided
+if (MONGO_URI) {
+  mongoose
+    .connect(MONGO_URI)
+    .then(() => console.log("✅ Connected to MongoDB"))
+    .catch((err) => console.error("Mongo connection error:", err));
+}
 
 const app = express();
 app.use(cors());
