@@ -1,17 +1,58 @@
 # Grey MarketPlace
 
-## Overview
-Grey MarketPlace is a decentralized assistant for creating, buying, and selling both fixed and variable items. Examples include fractional shares of property, entire assets such as horses, or consumables like apples. The platform lets creators upload item data and images, then mints smart contracts to manage ownership and transfers.
+**Grey MarketPlace** is a decentralized marketplace for creating, buying, and selling both **variable** and **fixed** assets — combining Web3-powered investment infrastructure with on-chain commerce fulfillment.
+
+## 🧠 What is Grey MarketPlace?
+
+Grey MarketPlace manages two distinct asset classes:
+
+### ✅ Variable Assets (Fractional Ownership / Tradable)
+These assets allow for ongoing ownership via shares that can be resold or transferred.
+
+**Examples**:
+- Racehorses
+- Real estate
+- Stocks
+- Art & collectibles
+- Music royalties
+
+**Smart Contract Logic**:
+- Tokenized fractional ownership (e.g., ERC-1155 or ERC-20)
+- Shares persist post-sale and can be traded in secondary markets
+- Metadata remains tied to ownership
+
+### ✅ Fixed Assets (Consumables / Non-Resalable)
+These assets are consumed, delivered, or redeemed upon purchase and cannot be resold.
+
+**Examples**:
+- Apples, coffee, food products
+- Merchandise
+- One-time services or tickets
+- Limited-use licenses
+
+**Smart Contract Logic**:
+- Claimable/burnable assets (e.g., ERC-721 or ephemeral contract)
+- Once used, the token is burned or deactivated
+- Prevents secondary resale to maintain finality
 
 ## Key Features
-- **Share Type Toggle** – switch between variable (tradable) and fixed (one-time use) assets
-- **Fractional Ownership** – divide an asset into shares
-- **Asset Upload** – add item metadata and images
-- **Image Support** – store images on IPFS/Pinata
-- **Smart Contract Minting** – deploy ERC-1155 tokens for each asset
+- 🌐 Web3-native smart contract creation
+- 🧩 Toggle between Fixed and Variable asset types
+- 📸 Upload images and metadata (stored on IPFS/Pinata)
+- 💸 Set share price and total supply
+- 🧾 Mint NFTs or tokens based on asset logic
+- 📊 Upcoming Analytics dashboard
 
 ## How It Works
-Variable assets are resellable tokens that can be fractionally owned. Fixed assets represent consumable or burnable items that cannot be resold once used. Grey MarketPlace uses smart contracts to track each type and enforce the correct behavior.
+1. **Create an Asset Listing**  
+   Choose whether the item is fixed or variable. Upload an image, set the price, and input the total shares (if variable).
+2. **Smart Contract Deployment**  
+   - Variable assets mint transferable shares.
+   - Fixed assets mint burnable or non-transferable claims.
+3. **Buyers Interact**  
+   Buyers purchase shares or individual fixed units, depending on the listing.
+4. **Optional Secondary Market (for Variable)**  
+   Variable asset shares are tradeable on secondary marketplaces.
 
 ## Folder Structure
 ```
@@ -80,6 +121,11 @@ Variable assets are resellable tokens that can be fractionally owned. Fixed asse
    ```
    - Frontend runs at **http://localhost:5173**
    - Backend listens on **http://localhost:4000**
+5. Compile and deploy the smart contracts (example uses Goerli):
+   ```bash
+   npx hardhat compile
+   npx hardhat run scripts/deploy.ts --network goerli
+   ```
 
 ## Tech Stack
 - **Frontend:** React, TypeScript, Chakra UI
@@ -114,6 +160,13 @@ Copy `.env.example` to `.env` and fill in:
    npx tsc
    ```
    - Run with PM2, Docker, or serverless.
+
+3. **Contracts**
+   ```bash
+   npx hardhat compile
+   npx hardhat run scripts/deploy.ts --network goerli
+   ```
+   - Change `goerli` to your desired network.
 
 ## Auto Improvement
 This repository includes an experimental script that calls OpenAI to suggest refinements to any JavaScript or TypeScript file. Provide a file path and the script will overwrite it with the model's response.
