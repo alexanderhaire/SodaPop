@@ -132,11 +132,13 @@ These assets are consumed, delivered, or redeemed upon purchase and cannot be re
 - **Backend:** Node.js, TypeScript, Express, MongoDB
 - **Smart Contracts:** Solidity, Hardhat, Ethers.js
 - **Storage:** IPFS/Pinata for asset metadata and images
+- **AI:** OpenAI GPT-4o vision is used to auto-generate titles and descriptions
+  for uploaded images when these fields are left blank during item creation
 
 ## Environment Variables
 Copy `.env.example` to `.env` and fill in:
 - **PORT** — Backend port (default `4000`)
-- **OPENAI_API_KEY** — OpenAI key for the chatbot
+- **OPENAI_API_KEY** — OpenAI key for the chatbot and image captioning
 - **ALCHEMY_API_URL** — RPC endpoint for contract calls
 - **DEPLOYER_PRIVATE_KEY** — Private key for contract deployment
 - **JWT_SECRET** — Secret used to sign JWTs
@@ -144,6 +146,11 @@ Copy `.env.example` to `.env` and fill in:
 - **MONGO_URI** — MongoDB connection string
 - **VITE_NFT_STORAGE_KEY** — API key for nft.storage uploads
 - **VITE_HORSE_FACTORY_ADDRESS** — Deployed HorseFactory address
+
+### Auto captions with OpenAI Vision
+`POST /api/items/describe` accepts a base64 image and returns a generated title
+and short description. The item creation form uses this endpoint when the user
+leaves those fields blank.
 
 ## Deployment
 
