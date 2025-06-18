@@ -18,23 +18,24 @@ async function main() {
   const provider = new ethers.JsonRpcProvider(ALCHEMY_API_URL);
   const latest = await provider.getBlockNumber();
 
-  const blocks = [];
+  const transactions = [];
   for (let i = 0; i < 5; i++) {
     const block = await provider.getBlockWithTransactions(latest - i);
-    blocks.push({
-      number: block.number,
-      transactions: block.transactions.slice(0, 5).map(tx => ({
+    for (const tx of block.transactions.slice(0, 5)) {
+      const valueEther = parseFloat(ethers.formatEther(tx.value));
+      transactions.push({
+        hash: tx.hash,
         from: tx.from,
         to: tx.to,
-        value: ethers.formatEther(tx.value)
-      }))
-    });
+        value: valueEther,
+        fromDelta: -valueEther,
+        toDelta: valueEther
+      });
+    }
   }
 
   const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
-  const prompt =
-    'Summarize these blockchain transactions. Provide general insights only, not financial advice.\n\n' +
-    JSON.stringify(blocks, null, 2);
+  const prompt = `Classify each transaction as buy, sell, mint or transfer. Provide a short narrative sentence summarizing what happened and include the ETH delta for the from and to wallets.\n\n${JSON.stringify(transactions, null, 2)}`;
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4-turbo',
@@ -42,7 +43,6 @@ async function main() {
     temperature: 0.3
   });
 
-  console.log('OpenAI summary:\n');
   console.log(completion.choices[0]?.message?.content || 'No response');
 }
 
