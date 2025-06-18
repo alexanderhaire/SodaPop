@@ -5,6 +5,8 @@ import {
   getWalletAffinities,
 } from "../ai/personalizationEngine";
 import { getRecommendedItems } from "../ai/embeddingService";
+import { searchItems } from "../ai/searchService";
+import { generateItemInsights } from "../ai/insightsService";
 
 const router = Router();
 
@@ -49,6 +51,20 @@ router.get("/recommendations", async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/marketplace/search?q=horse&wallet=0x123&top=5
+router.get("/search", async (req: Request, res: Response) => {
+  const wallet = (req.query.wallet as string) || "";
+  const top = parseInt(req.query.top as string) || 5;
+  const q = (req.query.q as string) || "";
+  try {
+    const items = await searchItems(q, wallet, top);
+    res.json(items);
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).json({ error: "Failed to search items" });
+  }
+});
+
 // GET /api/marketplace/affinities?wallet=0x123
 router.get("/affinities", async (req: Request, res: Response) => {
   const wallet = (req.query.wallet as string) || "";
@@ -58,6 +74,17 @@ router.get("/affinities", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Wallet affinities error:", err);
     res.status(500).json({ error: "Failed to fetch affinities" });
+  }
+});
+
+// GET /api/marketplace/insights
+router.get("/insights", async (_req: Request, res: Response) => {
+  try {
+    const insights = await generateItemInsights();
+    res.json(insights);
+  } catch (err) {
+    console.error("Insights error:", err);
+    res.status(500).json({ error: "Failed to generate insights" });
   }
 });
 
