@@ -39,7 +39,13 @@ import {
         setError("");
   
         try {
-          const res = await fetch(`/api/earnings/${address}`);
+          const url = `/api/earnings/${address}`;
+          const res = await fetch(url);
+          if (!res.ok) {
+            const text = await res.text();
+            console.error(`Unexpected response for ${url}:`, res.status, text);
+            throw new Error(`Invalid response ${res.status}`);
+          }
           const data = await res.json();
   
           // Optional: Fetch on-chain balances
