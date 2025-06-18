@@ -144,7 +144,7 @@ Copy `.env.example` to `.env` and fill in:
 - **JWT_SECRET** — Secret used to sign JWTs
 - **JWT_EXPIRES_IN** — Token lifetime (e.g. `1d`)
 - **MONGO_URI** — MongoDB connection string
-- **VITE_NFT_STORAGE_KEY** — API key for nft.storage uploads
+- **VITE_NFT_STORAGE_KEY** — API key for NFT.Storage V2 uploads
 - **VITE_HORSE_FACTORY_ADDRESS** — Deployed HorseFactory address
 
 ### Auto captions with OpenAI Vision
