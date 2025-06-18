@@ -21,7 +21,7 @@ const HorseList: React.FC = () => {
       <HStack justify="space-between" mb={4}>
         <Heading size="lg">Available Horses</Heading>
         <Button as={Link} to="/create" colorScheme="purple" variant="outline">
-          Add Horse
+          Add Item
         </Button>
       </HStack>
       <VStack spacing={6} align="stretch">
