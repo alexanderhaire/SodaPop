@@ -3,6 +3,7 @@
 const User = require("../models/user");
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Item = require("../models/item");
+import { estimateTokens, stripSensitiveValues } from "./promptUtils";
 
 export type InteractionAction = "viewed" | "favorited" | "purchased";
 
@@ -71,4 +72,22 @@ export async function getWalletPreferences(wallet: string): Promise<string> {
         }, purchased ${d.purchased || 0}`
     )
     .join("; ");
+}
+
+export async function buildPersonalizationPrompt(wallet: string): Promise<string> {
+  const user = await User.findOne({ walletAddress: wallet }).lean();
+  if (!user || !user.interactions) return '';
+  const entries = Object.entries(user.interactions) as [string, any][];
+  entries.sort((a, b) => scoreInteraction(b[1]) - scoreInteraction(a[1]));
+
+  let prompt = '';
+  for (const [itemId, d] of entries) {
+    const item = await Item.findById(itemId).lean();
+    const name = stripSensitiveValues(item?.name || `Item ${itemId}`);
+    const summary = `${name} viewed ${d.viewed || 0} times, favorited ${d.favorited || 0}, purchased ${d.purchased || 0}`;
+    const candidate = prompt ? `; ${summary}` : summary;
+    if (estimateTokens(prompt + candidate) > 4000) break;
+    prompt += candidate;
+  }
+  return prompt;
 }
