@@ -11,6 +11,15 @@ contract HorseToken is ERC1155, Ownable {
     mapping(uint256 => uint256) public horseSupply;
     mapping(uint256 => uint256) public maxSupply;
 
+    struct HorseOffering {
+        uint256 sharePrice;
+        uint256 totalShares;
+    }
+
+    mapping(uint256 => HorseOffering) private offerings;
+
+    event HorseOfferingCreated(uint256 indexed tokenId, uint256 sharePrice, uint256 totalShares);
+
 constructor(
     string memory uri,
     uint256[] memory horseIds,
@@ -40,5 +49,21 @@ constructor(
 
     function setURI(string memory newuri) external onlyOwner {
         _setURI(newuri);
+    }
+
+    function createHorseOffering(uint256 tokenId, uint256 sharePrice, uint256 totalShares) external onlyOwner {
+        require(offerings[tokenId].totalShares == 0, "Horse already exists");
+        maxSupply[tokenId] = totalShares;
+        uint256 companyStake = (totalShares * 10) / 100;
+        _mint(msg.sender, tokenId, companyStake, "");
+        horseSupply[tokenId] = companyStake;
+        totalSupply += companyStake;
+        offerings[tokenId] = HorseOffering({sharePrice: sharePrice, totalShares: totalShares});
+        emit HorseOfferingCreated(tokenId, sharePrice, totalShares);
+    }
+
+    function getHorseOffering(uint256 tokenId) external view returns (uint256, uint256) {
+        HorseOffering memory o = offerings[tokenId];
+        return (o.sharePrice, o.totalShares);
     }
 }
