@@ -1,4 +1,4 @@
-const { ethers } = require('ethers');
+const { ethers, ZeroAddress } = require('ethers');
 const { OpenAI } = require('openai');
 require('dotenv').config();
 
@@ -18,23 +18,37 @@ async function main() {
   const provider = new ethers.JsonRpcProvider(ALCHEMY_API_URL);
   const latest = await provider.getBlockNumber();
 
-  const blocks = [];
+  const transactions = [];
   for (let i = 0; i < 5; i++) {
     const block = await provider.getBlockWithTransactions(latest - i);
-    blocks.push({
-      number: block.number,
-      transactions: block.transactions.slice(0, 5).map(tx => ({
+    for (const tx of block.transactions.slice(0, 5)) {
+      const fromBefore = await provider.getBalance(tx.from, tx.blockNumber - 1);
+      const fromAfter = await provider.getBalance(tx.from, tx.blockNumber);
+
+      let toBefore = 0n;
+      let toAfter = 0n;
+      const toAddr = tx.to ?? ZeroAddress;
+      if (tx.to) {
+        toBefore = await provider.getBalance(tx.to, tx.blockNumber - 1);
+        toAfter = await provider.getBalance(tx.to, tx.blockNumber);
+      }
+
+      transactions.push({
+        block: block.number,
+        hash: tx.hash,
         from: tx.from,
-        to: tx.to,
-        value: ethers.formatEther(tx.value)
-      }))
-    });
+        to: toAddr,
+        value: ethers.formatEther(tx.value),
+        fromDelta: ethers.formatEther(fromAfter - fromBefore),
+        toDelta: ethers.formatEther(toAfter - toBefore)
+      });
+    }
   }
 
   const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
   const prompt =
-    'Summarize these blockchain transactions. Provide general insights only, not financial advice.\n\n' +
-    JSON.stringify(blocks, null, 2);
+    'Classify each transaction as a buy, sell, mint, or transfer and narrate it in one sentence. Include wallet balance deltas if provided. Provide general insights only, not financial advice.\n\n' +
+    JSON.stringify(transactions, null, 2);
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4-turbo',
@@ -42,7 +56,7 @@ async function main() {
     temperature: 0.3
   });
 
-  console.log('OpenAI summary:\n');
+  console.log('OpenAI transaction narratives:\n');
   console.log(completion.choices[0]?.message?.content || 'No response');
 }
 
