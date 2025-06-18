@@ -73,7 +73,7 @@ import {
   
     return (
       <Box p={6} maxW="800px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
-        <Heading size="lg" mb={4} color="purple.600">
+        <Heading size="lg" mb={4} color="#000">
           Your Horse Share Analytics
         </Heading>
         {loading ? (
@@ -92,14 +92,13 @@ import {
               >
                 <Heading size="md">{horse.name}</Heading>
                 <Text>
-                  My Ownership: <Badge colorScheme="green">{horse.my_share}%</Badge>
+                  My Ownership: <Badge>{horse.my_share}%</Badge>
                 </Text>
                 <Text>Total Earnings: ${horse.total_earned}</Text>
                 <Progress
                   value={horse.progress_to_goal}
                   size="sm"
                   mt={2}
-                  colorScheme="blue"
                 />
                 <Text fontSize="sm" color="gray.600">Goal: ${horse.goal}</Text>
               </Box>

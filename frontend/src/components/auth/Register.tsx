@@ -71,17 +71,13 @@ const Register: React.FC = () => {
           </Text>
         )}
 
-        <Button
-          colorScheme="blue"
-          onClick={handleRegister}
-          isLoading={loading}
-        >
+        <Button variant="cta" onClick={handleRegister} isLoading={loading}>
           Register
         </Button>
 
         <Text fontSize="sm">
           Already have an account?{" "}
-          <Link as={RouterLink} to="/login" color="blue.500">
+          <Link as={RouterLink} to="/login" color="#000">
             Login
           </Link>
         </Text>

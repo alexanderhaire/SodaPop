@@ -19,13 +19,13 @@ const HorseList: React.FC = () => {
   return (
     <Box p={6} maxW="800px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
       <HStack justify="space-between" mb={4}>
-        <Heading size="lg" color="purple.600">Available Horses</Heading>
-        <Button as={Link} to="/create" colorScheme="purple" variant="solid">
+        <Heading size="lg" color="#000">Available Horses</Heading>
+        <Button as={Link} to="/create" variant="cta">
           Add Item
         </Button>
       </HStack>
       <VStack spacing={6} align="stretch">
-        {horses.map((horse) => (
+        {horses.map((horse, idx) => (
           <HStack
             key={horse.id}
             p={4}
@@ -33,7 +33,7 @@ const HorseList: React.FC = () => {
             borderRadius="lg"
             justify="space-between"
             align="center"
-            bg="white"
+            bg={idx % 2 === 0 ? "#fff" : "#f8f8f8"}
             boxShadow="md"
           >
             <HStack spacing={4}>
@@ -48,7 +48,7 @@ const HorseList: React.FC = () => {
                 <Text color="gray.500">{horse.record}</Text>
               </Box>
             </HStack>
-            <Button colorScheme="teal" onClick={() => navigate(`/horses/${horse.id}`)}>
+            <Button variant="grey" onClick={() => navigate(`/horses/${horse.id}`)}>
               Details
             </Button>
           </HStack>

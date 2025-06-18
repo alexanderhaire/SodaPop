@@ -97,7 +97,7 @@ const ChatWindow: React.FC = () => {
                 msg.role === "system"
                   ? "gray.300"
                   : msg.role === "user"
-                  ? "blue.500"
+                  ? "#000"
                   : "gray.200"
               }
               color={msg.role === "user" ? "white" : "black"}
@@ -117,11 +117,7 @@ const ChatWindow: React.FC = () => {
           onKeyDown={handleKeyDown}
           isDisabled={isSending}
         />
-        <Button
-          colorScheme="blue"
-          onClick={sendMessage}
-          isLoading={isSending}
-        >
+        <Button variant="cta" onClick={sendMessage} isLoading={isSending}>
           Send
         </Button>
       </HStack>
