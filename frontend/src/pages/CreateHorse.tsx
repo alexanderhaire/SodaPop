@@ -49,6 +49,7 @@ const CreateHorse = () => {
     });
 
     const metadata = await nftClient.store({
+      name: imageFile.name || "Uploaded Image",
       image: new NFTFile([imageFile], imageFile.name, { type: imageFile.type })
     });
 
@@ -59,6 +60,10 @@ const CreateHorse = () => {
 
   const handleSubmit = async () => {
     try {
+      if (!imageFile) {
+        alert("Please upload an image before submitting.");
+        return;
+      }
       const sharePrice = Number(form.sharePrice);
       const totalShares = Number(form.totalShares);
 
