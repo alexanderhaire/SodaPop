@@ -12,6 +12,7 @@ import marketplaceRoutes from "./controllers/marketplaceController";
 import itemsRoutes from "./routes/items";
 import leaderboardRoutes from "./controllers/leaderboard";
 import eventRoutes from "./routes/events";
+import uploadRoutes from "./routes/upload";
 import { PORT, JWT_SECRET, MONGO_URI } from "./utils/config";
 import { startEventMonitor } from "./jobs/eventMonitor";
 
@@ -77,6 +78,9 @@ app.use("/api/leaderboard", leaderboardRoutes);
 
 // SodaBot chat endpoint (unprotected)
 app.use("/api/sodabot", sodabotRoutes);
+
+// File upload endpoint (unprotected)
+app.use("/api/upload", uploadRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend listening on http://localhost:${PORT}`);
