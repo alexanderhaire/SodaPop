@@ -42,6 +42,7 @@ app.get("/api/hello", (_req: Request, res: Response) => {
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
+  console.log("Auth header received:", authHeader);
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -57,6 +58,9 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 // Mount auth routes (unprotected)
 app.use("/api/auth", authRoutes);
+
+// File upload endpoint (unprotected)
+app.use("/api/upload", uploadRoutes);
 
 // Mount portfolio routes (protected)
 app.use("/api", requireAuth, portfolioRoutes);
@@ -78,9 +82,6 @@ app.use("/api/leaderboard", leaderboardRoutes);
 
 // SodaBot chat endpoint (unprotected)
 app.use("/api/sodabot", sodabotRoutes);
-
-// File upload endpoint (unprotected)
-app.use("/api/upload", uploadRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Backend listening on http://localhost:${PORT}`);
