@@ -23,7 +23,8 @@ import {
 } from "@chakra-ui/react";
 import { useState, useRef } from "react";
 import axios from "../utils/axiosConfig";
-import { uploadToNftStorageV2 } from "../utils/nftStorage";
+import { uploadImage } from "../utils/uploadImage";
+import { getToken } from "../utils/authToken";
 
 export default function CreateItemForm() {
   const [form, setForm] = useState({
@@ -72,8 +73,9 @@ export default function CreateItemForm() {
   const uploadFile = async (file: File) => {
     setImageFile(file);
     try {
-      const cid = await uploadToNftStorageV2(file);
-      setIpfsUrl(`https://ipfs.io/ipfs/${cid}`);
+      const token = getToken() || "";
+      const imageUrl = await uploadImage(file, token);
+      setIpfsUrl(imageUrl);
     } catch (err) {
       console.error("Image upload error:", err);
       toast({ title: "Failed to upload image", status: "error" });
