@@ -6,6 +6,9 @@ export default defineConfig({
   base: '/',
   server: {
     open: false,
+    proxy: {
+      '/api': 'http://localhost:4000',
+    },
   },
   build: {
     assetsInlineLimit: 0,
