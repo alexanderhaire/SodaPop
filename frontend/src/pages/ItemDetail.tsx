@@ -22,6 +22,14 @@ import {
   FormLabel,
   Input,
 } from "@chakra-ui/react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip as ChartTooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { ethers } from "ethers";
 import axios from "axios";
 import {
@@ -48,6 +56,8 @@ const ItemDetail: React.FC = () => {
   const [offeringShares, setOfferingShares] = useState<number | null>(null);
   const [calcShares, setCalcShares] = useState<string>("");
   const [calcEarnings, setCalcEarnings] = useState<string>("");
+  const [marketData, setMarketData] = useState<{ price: number; timestamp: string }[]>([]);
+  const [latestPrice, setLatestPrice] = useState<number | null>(null);
 
   const {
     config,
@@ -176,6 +186,23 @@ const ItemDetail: React.FC = () => {
     fetchBalance();
   }, [address, tokenId]);
 
+  useEffect(() => {
+    if (!id) return;
+    const fetchMarket = async () => {
+      try {
+        const res = await axios.get(`/api/asset/market-data/${id}`);
+        const data = res.data as { price: number; timestamp: string };
+        setMarketData((prev) => [...prev.slice(-19), data]);
+        setLatestPrice(data.price);
+      } catch (err) {
+        console.error('Failed to load market data:', err);
+      }
+    };
+    fetchMarket();
+    const interval = setInterval(fetchMarket, 5000);
+    return () => clearInterval(interval);
+  }, [id]);
+
   const item = items.find((i) => i.id === id);
   if (!item) {
     return (
@@ -246,13 +273,16 @@ const ItemDetail: React.FC = () => {
       <Heading mb={4} color="purple.600">
         {item.name}
       </Heading>
-      <Image
-        src={`/images/${item.id}.png`}
-        alt={item.name}
-        borderRadius="lg"
-        boxShadow="md"
-        mb={4}
-      />
+      <Box h="250px" mb={4}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={marketData}>
+            <XAxis dataKey="timestamp" hide />
+            <YAxis domain={['dataMin', 'dataMax']} hide />
+            <ChartTooltip />
+            <Line type="monotone" dataKey="price" stroke="#805AD5" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </Box>
       <Divider mb={4} />
 
       <VStack spacing={3} align="start">
@@ -281,6 +311,15 @@ const ItemDetail: React.FC = () => {
       </VStack>
 
       <HStack mt={6} spacing={4}>
+        <Button variant="grey" size="sm">
+          Shares: {sharesOwned ?? 0}
+        </Button>
+        <Button variant="grey" size="sm">
+          Total Value: {latestPrice && sharesOwned ? (latestPrice * sharesOwned).toFixed(2) : 0}
+        </Button>
+      </HStack>
+
+      <HStack mt={4} spacing={4}>
         <Button variant="cta" onClick={handleBuyShare} isLoading={isPreparing || isMinting}>
           Buy Share for 0.00001 ETH
         </Button>
