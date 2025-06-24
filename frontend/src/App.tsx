@@ -11,6 +11,7 @@ import {
   HStack,
   Button,
   Text,
+  useToast,
 } from "@chakra-ui/react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import { clearToken } from "./utils/authToken";
@@ -31,6 +32,7 @@ const App: React.FC = () => {
   const { connect, connectors, isLoading: connectLoading } = useConnect();
   const { disconnect } = useDisconnect();
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleLogout = () => {
     clearToken();
@@ -99,7 +101,17 @@ const App: React.FC = () => {
               connectors.map((connector) => (
                 <Button
                   key={connector.id}
-                  onClick={() => connect({ connector })}
+                  onClick={() => {
+                    connect({ connector }).catch((err) => {
+                      if ((err as Error).name === "ConnectorNotFoundError") {
+                        toast({
+                          title:
+                            "Add a web 3 wallet from your browser's marketplace",
+                          status: "error",
+                        });
+                      }
+                    });
+                  }}
                   isLoading={
                     connectLoading && connector.id === connectors?.[0]?.id
                   }
