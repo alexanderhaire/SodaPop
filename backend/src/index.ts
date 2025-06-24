@@ -12,6 +12,7 @@ import marketplaceRoutes from "./controllers/marketplaceController";
 import itemsRoutes from "./routes/items";
 import leaderboardRoutes from "./controllers/leaderboard";
 import eventRoutes from "./routes/events";
+import marketDataRoutes from "./routes/marketData";
 import uploadRoutes from "./routes/upload";
 import { PORT, JWT_SECRET, MONGO_URI } from "./utils/config";
 import { startEventMonitor } from "./jobs/eventMonitor";
@@ -76,6 +77,9 @@ app.use("/api/marketplace", requireAuth, marketplaceRoutes);
 
 // Events endpoint (protected)
 app.use("/api", requireAuth, eventRoutes);
+
+// Market data endpoint (unprotected)
+app.use("/api", marketDataRoutes);
 
 // Leaderboard endpoint (unprotected)
 app.use("/api/leaderboard", leaderboardRoutes);
