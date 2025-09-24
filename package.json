@@ -2,7 +2,7 @@
   "scripts": {
     "improve": "node scripts/improve_code.js",
     "test": "jest",
-    "start": "npm --prefix frontend run preview",
+    "start": "npm --prefix backend run build && npm --prefix backend run start",
     "build": "npm --prefix frontend ci && npm --prefix frontend run build"
   },
   "devDependencies": {
