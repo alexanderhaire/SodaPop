@@ -197,6 +197,12 @@ leaves those fields blank.
    - Use the Solana CLI or Anchor to deploy custom programs if your use-case requires them.
    - SPL token mints can be created directly from the frontend using the provided launcher.
 
+## Operational Notes
+
+- **Static asset caching:** The backend now serves the compiled frontend from `frontend/dist` with cache headers that mark hashed CSS and JS bundles as immutable for one year while leaving `index.html` un-cached. This ensures long-lived assets participate in the browser's conditional requests (HTTP 304) without risking stale HTML shells.
+- **Wallet Standard adoption:** The React entrypoint relies on `useStandardWalletAdapters` and filters unexpected detection payloads. This removes redundant Solflare-specific adapters and downgrades duplicate warnings to debug-level context so expected Wallet Standard behaviour does not alarm operators.
+- **Edge monitoring:** Because most request latency occurs before the origin is reached, pair the backend health checks with CDN/edge dashboards to watch cache hit rates, 304 ratios, and tail latency. Sudden degradations often indicate caching regressions or wallet detection loops that should be triaged quickly.
+
 ## Auto Improvement
 This repository includes an experimental script that calls OpenAI to suggest refinements to any JavaScript or TypeScript file. Provide a file path and the script will overwrite it with the model's response.
 
