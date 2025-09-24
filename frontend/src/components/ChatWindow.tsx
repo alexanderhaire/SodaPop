@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { VStack, HStack, Box, Input, Button, Text } from "@chakra-ui/react";
-import axios from "axios";
+import axios from "../utils/axiosConfig";
 
 type ChatMessage = {
   role: "system" | "user" | "assistant";
@@ -33,7 +33,7 @@ const ChatWindow: React.FC = () => {
     setIsSending(true);
 
     try {
-      const response = await axios.post("/api/chat/message", {
+      const response = await axios.post("/chat/message", {
         message: userMsg,
       });
 

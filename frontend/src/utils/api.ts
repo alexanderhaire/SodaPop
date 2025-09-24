@@ -1,11 +1,7 @@
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: import.meta.env.VITE_BACKEND_URL || "http://localhost:5000/api",
-});
+import axios from "./axiosConfig";
 
 // TEMP: Mock response for /items/:id
-api.interceptors.response.use((response) => {
+axios.interceptors.response.use((response) => {
   if (
     response.config.url?.match(/\/items\/\w+/) &&
     response.config.method === "get"
@@ -28,4 +24,4 @@ api.interceptors.response.use((response) => {
   return response;
 });
 
-export default api;
+export default axios;

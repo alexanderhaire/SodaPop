@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { SAMPLE_METADATA_URL } from "../utils/config";
 
 interface Attribute {
   trait_type: string;
@@ -16,9 +17,14 @@ const ItemViewer: React.FC = () => {
   const [item, setItem] = useState<ItemMetadata | null>(null);
 
   useEffect(() => {
+    if (!SAMPLE_METADATA_URL) {
+      console.warn("SAMPLE_METADATA_URL is not configured; skipping metadata fetch.");
+      return;
+    }
+
     const fetchMetadata = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8080/1.json");
+        const res = await fetch(SAMPLE_METADATA_URL);
         const ct = res.headers.get("content-type") || "";
         if (!ct.includes("application/json")) {
           const text = await res.text();

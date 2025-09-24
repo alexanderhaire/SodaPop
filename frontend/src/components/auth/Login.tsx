@@ -30,7 +30,7 @@ const Login: React.FC = () => {
     }
     setLoading(true);
     try {
-      const resp = await axios.post("http://localhost:4000/api/auth/login", {
+      const resp = await axios.post("/auth/login", {
         username,
         password,
       });

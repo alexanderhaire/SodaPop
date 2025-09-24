@@ -27,7 +27,7 @@ const Register: React.FC = () => {
     }
     setLoading(true);
     try {
-      await axios.post("http://localhost:4000/api/auth/register", {
+      await axios.post("/auth/register", {
         username,
         password,
       });
