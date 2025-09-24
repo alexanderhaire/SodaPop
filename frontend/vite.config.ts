@@ -39,6 +39,15 @@ export default defineConfig({
   },
   build: {
     assetsInlineLimit: 0,
+    cssCodeSplit: true,
+    manifest: true,
+    rollupOptions: {
+      output: {
+        chunkFileNames: "assets/[name]-[hash].js",
+        entryFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash][extname]",
+      },
+    },
   },
   resolve: {
     alias: {
@@ -60,7 +69,6 @@ export default defineConfig({
       '@solana/wallet-adapter-react',
       '@solana/wallet-adapter-react-ui',
       '@solana/wallet-adapter-phantom',
-      '@solana/wallet-adapter-solflare',
       '@solana/spl-token',
       'buffer',
     ],

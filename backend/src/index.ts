@@ -40,6 +40,32 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use("/uploads", express.static(uploadsDir));
 
+const frontendDistDir = path.resolve(process.cwd(), "frontend", "dist");
+const assetCacheRegex = /\.(css|js|mjs|cjs|json|ico|png|jpg|jpeg|gif|svg|webp|woff2?)$/i;
+
+if (fs.existsSync(frontendDistDir)) {
+  console.log("[static] Serving frontend assets from:", frontendDistDir);
+  app.use(
+    express.static(frontendDistDir, {
+      index: false,
+      etag: true,
+      setHeaders(res, filePath) {
+        if (/\.html?$/.test(filePath)) {
+          res.setHeader("Cache-Control", "no-cache");
+          return;
+        }
+
+        if (assetCacheRegex.test(filePath)) {
+          res.setHeader(
+            "Cache-Control",
+            "public, max-age=31536000, immutable"
+          );
+        }
+      },
+    })
+  );
+}
+
 // Health check
 app.get("/healthz", (_req: Request, res: Response) => {
   res.status(200).send("ok");
@@ -99,6 +125,24 @@ app.use("/api/leaderboard", leaderboardRoutes);
 
 // SodaBot chat endpoint (unprotected)
 app.use("/api/sodabot", sodabotRoutes);
+
+if (fs.existsSync(frontendDistDir)) {
+  app.get("/*", (req: Request, res: Response, next: NextFunction) => {
+    if (
+      req.path.startsWith("/api/") ||
+      req.path === "/api" ||
+      req.path.startsWith("/uploads/") ||
+      req.path === "/uploads" ||
+      req.path === "/healthz" ||
+      req.path.startsWith("/health")
+    ) {
+      next();
+      return;
+    }
+
+    res.sendFile(path.join(frontendDistDir, "index.html"));
+  });
+}
 
 const port = PORT;
 const host = "0.0.0.0";
