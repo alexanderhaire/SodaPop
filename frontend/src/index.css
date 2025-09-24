@@ -1,13 +1,20 @@
 body {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
-  background: #f0f0f0;
+  font-family: 'Space Grotesk', 'Poppins', sans-serif;
+  background: radial-gradient(circle at top left, rgba(16, 211, 255, 0.08), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.12), transparent 45%),
+    linear-gradient(135deg, #05060f 0%, #111b3a 100%);
   min-height: 100vh;
-  color: #222;
+  color: #f5f5ff;
+  background-attachment: fixed;
 }
 
 * {
   box-sizing: border-box;
+}
+
+a {
+  color: inherit;
 }
 
 .chatbot {
