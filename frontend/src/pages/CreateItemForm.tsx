@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { AttachmentIcon } from "@chakra-ui/icons";
 import {
   Alert,
   AlertDescription,
@@ -94,9 +95,13 @@ const CreateItemForm = () => {
   const [symbol, setSymbol] = useState("");
   const [initialSupply, setInitialSupply] = useState("1000000");
   const [photo, setPhoto] = useState<{ file: File; preview: string } | null>(null);
+  const [documentAttachment, setDocumentAttachment] = useState<{ file: File } | null>(
+    null
+  );
   const [state, setState] = useState<DeployState>({});
   const [isDeploying, setIsDeploying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const documentInputRef = useRef<HTMLInputElement | null>(null);
 
   const networkEndpoint = useMemo(() => connection.rpcEndpoint, [connection]);
 
@@ -145,6 +150,59 @@ const CreateItemForm = () => {
     setPhoto(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
+    }
+  };
+
+  const handleDocumentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      setDocumentAttachment(null);
+      return;
+    }
+
+    const allowedTypes = new Set([
+      "application/pdf",
+      "text/plain",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/rtf",
+      "text/markdown",
+    ]);
+
+    const allowedByPrefix = file.type.startsWith("text/");
+
+    if (file.type && !allowedTypes.has(file.type) && !allowedByPrefix) {
+      toast({
+        title: "Unsupported document",
+        description: "Upload a PDF, text, or Word document.",
+        status: "error",
+      });
+      if (documentInputRef.current) {
+        documentInputRef.current.value = "";
+      }
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Document too large",
+        description: "Keep supporting files under 10 MB.",
+        status: "error",
+      });
+      if (documentInputRef.current) {
+        documentInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setDocumentAttachment({ file });
+  };
+
+  const handleDocumentReset = () => {
+    setDocumentAttachment(null);
+    if (documentInputRef.current) {
+      documentInputRef.current.value = "";
     }
   };
 
@@ -450,6 +508,64 @@ const CreateItemForm = () => {
                       onClick={handlePhotoReset}
                     >
                       Remove photo
+                    </Button>
+                  </Stack>
+                </HStack>
+              )}
+            </GridItem>
+
+            <GridItem colSpan={{ base: 1, md: 2 }}>
+              <FormControl>
+                <FormLabel>Supporting document</FormLabel>
+                <Input
+                  type="file"
+                  accept=".pdf,.txt,.doc,.docx,.rtf,.md"
+                  ref={documentInputRef}
+                  onChange={handleDocumentChange}
+                />
+                <FormHelperText>
+                  Optional launch brief or dossier. Files never leave your
+                  browser and stay under 10 MB.
+                </FormHelperText>
+              </FormControl>
+
+              {documentAttachment && (
+                <HStack
+                  mt={4}
+                  spacing={4}
+                  align="flex-start"
+                  bg="rgba(12, 18, 38, 0.7)"
+                  borderRadius="xl"
+                  border="1px solid rgba(114, 140, 255, 0.26)"
+                  p={4}
+                >
+                  <Box
+                    bg="rgba(148, 163, 255, 0.16)"
+                    borderRadius="lg"
+                    p={3}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <AttachmentIcon boxSize={6} color="purple.200" />
+                  </Box>
+                  <Stack spacing={2} fontSize="sm">
+                    <Box>
+                      <Text fontWeight="semibold">
+                        {documentAttachment.file.name}
+                      </Text>
+                      <Text color="whiteAlpha.700">
+                        {formatFileSize(documentAttachment.file.size)}
+                      </Text>
+                    </Box>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="purple"
+                      alignSelf="flex-start"
+                      onClick={handleDocumentReset}
+                    >
+                      Remove document
                     </Button>
                   </Stack>
                 </HStack>
