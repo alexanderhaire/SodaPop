@@ -22,6 +22,7 @@ import {
   useToast,
   VStack,
 } from "@chakra-ui/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
   Keypair,
@@ -39,7 +40,6 @@ import {
   getAssociatedTokenAddressSync,
   getMinimumBalanceForRentExemptMint,
 } from "@solana/spl-token";
-import { addSpotlightItem } from "../utils/spotlightItems";
 
 const DEFAULT_DECIMALS = 9;
 
@@ -84,29 +84,11 @@ const parseTokenSupply = (raw: string, decimals: number): bigint => {
   return wholeUnits + fractionUnits;
 };
 
-const formatDisplaySupply = (raw: string): string => {
-  const cleaned = raw.replace(/,/g, "").trim();
-  if (!cleaned) {
-    return "0";
-  }
-
-  const [wholePart, fractionPart = ""] = cleaned.split(".");
-
-  const normalizedWhole = /[^0-9]/.test(wholePart)
-    ? wholePart
-    : (wholePart ? BigInt(wholePart) : 0n).toLocaleString();
-
-  const trimmedFraction = fractionPart
-    .slice(0, DEFAULT_DECIMALS)
-    .replace(/0+$/, "");
-
-  return trimmedFraction ? `${normalizedWhole}.${trimmedFraction}` : normalizedWhole;
-};
-
 const CreateItemForm = () => {
   const toast = useToast();
   const { publicKey, connected, sendTransaction } = useWallet();
   const { connection } = useConnection();
+  const queryClient = useQueryClient();
 
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
@@ -178,6 +160,8 @@ const CreateItemForm = () => {
       });
       return;
     }
+
+    const walletAddress = publicKey.toBase58();
 
     const trimmedName = name.trim();
     const trimmedSymbol = symbol.trim().toUpperCase();
@@ -268,29 +252,61 @@ const CreateItemForm = () => {
         "confirmed"
       );
 
-      const displaySupply = formatDisplaySupply(initialSupply);
+      const mintAddress = mintKeypair.publicKey.toBase58();
+      const tokenAccountAddress = associatedTokenAccount.toBase58();
 
       setState({
         signature,
-        mintAddress: mintKeypair.publicKey.toBase58(),
-        tokenAccount: associatedTokenAccount.toBase58(),
+        mintAddress,
+        tokenAccount: tokenAccountAddress,
       });
 
-      addSpotlightItem({
-        name: trimmedName,
-        symbol: trimmedSymbol,
-        record: `Freshly minted • Supply ${displaySupply} ${trimmedSymbol}`,
-        image: photo?.preview ?? undefined,
-        mintAddress: mintKeypair.publicKey.toBase58(),
-        tokenAccount: associatedTokenAccount.toBase58(),
-        signature,
-        initialSupply: displaySupply,
-      });
+      let persistError: Error | null = null;
+      try {
+        const response = await fetch("/api/tokens/record", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            tx: signature,
+            mint: mintAddress,
+            ata: tokenAccountAddress,
+            amount: supply.toString(),
+            name: trimmedName,
+            symbol: trimmedSymbol,
+            imageUrl: photo?.preview ?? undefined,
+            creatorWallet: walletAddress,
+            decimals: DEFAULT_DECIMALS,
+          }),
+        });
+
+        if (!response.ok) {
+          let message = "Failed to record token launch";
+          try {
+            const payload = await response.json();
+            if (payload && typeof payload.error === "string") {
+              message = payload.error;
+            }
+          } catch (parseErr) {
+            console.warn("Unable to parse record-token response", parseErr);
+          }
+          throw new Error(message);
+        }
+
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["spotlight"] }),
+          queryClient.invalidateQueries({ queryKey: ["portfolio", walletAddress] }),
+        ]);
+      } catch (err) {
+        console.error("Failed to persist launched token", err);
+        persistError = err instanceof Error ? err : new Error("Failed to persist launched token");
+      }
 
       toast({
         title: `${trimmedSymbol} token minted`,
-        description: `${trimmedName} successfully launched on Solana. The Spotlight roster has been refreshed.`,
-        status: "success",
+        description: persistError
+          ? `${trimmedName} launched on-chain, but syncing with Spotlight failed: ${persistError.message}`
+          : `${trimmedName} successfully launched on Solana. Spotlight and your portfolio are updating now.`,
+        status: persistError ? "warning" : "success",
       });
     } catch (err) {
       const message =

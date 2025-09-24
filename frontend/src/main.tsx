@@ -4,6 +4,7 @@ import React, { PropsWithChildren, useEffect, useMemo, useRef } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Buffer } from "buffer";
 import process from "process";
 import {
@@ -22,6 +23,8 @@ import App from "./App";
 import theme from "./theme";
 import "./index.css";
 import "@solana/wallet-adapter-react-ui/styles.css";
+
+const queryClient = new QueryClient();
 
 // Ensure Buffer/process globals exist for Solana libraries when bundled with Vite
 if (typeof window !== "undefined") {
@@ -100,9 +103,11 @@ root.render(
   <React.StrictMode>
     <SolanaProviders>
       <ChakraProvider theme={theme}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <BrowserRouter>
+            <App />
+          </BrowserRouter>
+        </QueryClientProvider>
       </ChakraProvider>
     </SolanaProviders>
   </React.StrictMode>
