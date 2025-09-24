@@ -28,7 +28,6 @@ import {
 import { useState, useRef } from "react";
 import axios from "../utils/axiosConfig";
 import { uploadImage } from "../utils/uploadImage";
-import { getToken } from "../utils/authToken";
 
 export default function CreateItemForm() {
   const [form, setForm] = useState({
@@ -77,8 +76,7 @@ export default function CreateItemForm() {
   const uploadFile = async (file: File) => {
     setImageFile(file);
     try {
-      const token = getToken() || "";
-      const imageUrl = await uploadImage(file, token);
+      const imageUrl = await uploadImage(file);
       setIpfsUrl(imageUrl);
     } catch (err) {
       console.error("Image upload error:", err);
