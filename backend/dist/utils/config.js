@@ -3,14 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MONGO_URI = exports.ALERT_EMAIL = exports.SMTP_PASS = exports.SMTP_USER = exports.SMTP_PORT = exports.SMTP_HOST = exports.JWT_EXPIRES_IN = exports.JWT_SECRET = exports.PRIVATE_KEY = exports.ALCHEMY_API_URL = exports.OPENAI_API_KEY = exports.PORT = void 0;
+exports.MONGO_URI = exports.ALERT_EMAIL = exports.SMTP_PASS = exports.SMTP_USER = exports.SMTP_PORT = exports.SMTP_HOST = exports.JWT_EXPIRES_IN = exports.JWT_SECRET = exports.SOLANA_RPC_URL = exports.OPENAI_API_KEY = exports.PORT = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const getString = (value, fallback = "") => (value ?? "").trim() || fallback;
 exports.PORT = Number(process.env.PORT) || 8080;
 exports.OPENAI_API_KEY = getString(process.env.OPENAI_API_KEY);
-exports.ALCHEMY_API_URL = getString(process.env.ALCHEMY_API_URL);
-exports.PRIVATE_KEY = getString(process.env.PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY);
+exports.SOLANA_RPC_URL = getString(process.env.SOLANA_RPC_URL, "https://api.devnet.solana.com");
 exports.JWT_SECRET = getString(process.env.JWT_SECRET, "replace_with_strong_secret");
 exports.JWT_EXPIRES_IN = getString(process.env.JWT_EXPIRES_IN, "1h");
 exports.SMTP_HOST = getString(process.env.SMTP_HOST);

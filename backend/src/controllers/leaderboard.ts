@@ -1,40 +1,34 @@
 import { Router, Request, Response } from "express";
-import { ethers } from "ethers";
-import { ALCHEMY_API_URL } from "../utils/config";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { getConnection } from "../services/blockchainService";
 
 const router = Router();
-const provider = new ethers.JsonRpcProvider(ALCHEMY_API_URL);
-
-const TOKEN_ADDRESS = "0xaCC9a224F2607559E124FD37EA9E2973302033Eb";
-const ERC1155_ABI = [
-  "function balanceOfBatch(address[] accounts, uint256[] ids) view returns (uint256[])",
-];
 
 const KNOWN_HOLDERS = [
-  "0x1111111111111111111111111111111111111111",
-  "0x2222222222222222222222222222222222222222",
-  "0x3333333333333333333333333333333333333333",
-  "0x4444444444444444444444444444444444444444",
-  "0x5555555555555555555555555555555555555555",
-  "0x6666666666666666666666666666666666666666",
+  "7xKXtg8Xf5gYvEPq6Z9erjRzCQXDpUe1koXSPoaqe7iH",
+  "8YJc6Uxhk1k4LwWXcncxUx7fTT1YwoMvV7bgidhra9X6",
+  "5Fh3LwT1Muv7P9dQqN5KMK9eDpjXGZUp3NEPoPFcQpQv",
+  "H3U4p1LBXjg5eQqr8RP4eAbQeXtfqUfAfeU3uVAk1tZB",
+  "Fz9S8UQGiVHtV6nRvWmvMRGsiE9zraFMvx6bMpiKFFta",
+  "Eq9E5iADG7n2D1LDPZWS9Vyuk3F7S3Uz7Dnk3a1JpN96",
 ];
 
-router.get("/:tokenId", async (req: Request, res: Response) => {
-  const tokenId = Number(req.params.tokenId);
-  if (Number.isNaN(tokenId)) {
-    res.status(400).json({ error: "Invalid tokenId" });
-    return;
-  }
-
+router.get("/:mint", async (_req: Request, res: Response) => {
   try {
-    const contract = new ethers.Contract(TOKEN_ADDRESS, ERC1155_ABI, provider);
-    const ids = KNOWN_HOLDERS.map(() => tokenId);
-    const balances: bigint[] = await contract.balanceOfBatch(KNOWN_HOLDERS, ids);
+    const connection = getConnection();
+    const balances = await Promise.all(
+      KNOWN_HOLDERS.map(async (addr) => {
+        const pubkey = new PublicKey(addr);
+        const lamports = await connection.getBalance(pubkey);
+        return { address: addr, lamports };
+      })
+    );
 
-    const leaderboard = KNOWN_HOLDERS.map((addr, i) => ({
-      address: addr,
-      shares: Number(balances[i] || 0n),
-    }))
+    const leaderboard = balances
+      .map(({ address, lamports }) => ({
+        address,
+        shares: Number((lamports / LAMPORTS_PER_SOL).toFixed(3)),
+      }))
       .sort((a, b) => b.shares - a.shares)
       .slice(0, 5);
 

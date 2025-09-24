@@ -1,79 +1,78 @@
 // File: frontend/src/main.tsx
 
-import React from "react";
+import React, { PropsWithChildren, useMemo } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
-import theme from "./theme";
+import { Buffer } from "buffer";
+import process from "process";
 import {
-  WagmiConfig,
-  createConfig,
-  configureChains,
-  Chain,
-} from "wagmi";
-import { publicProvider } from "wagmi/providers/public";
-import { MetaMaskConnector } from "wagmi/connectors/metaMask";
+  ConnectionProvider,
+  WalletProvider,
+} from "@solana/wallet-adapter-react";
+import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
+import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
+import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
+import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import { clusterApiUrl } from "@solana/web3.js";
 import App from "./App";
+import theme from "./theme";
 import "./index.css";
+import "@solana/wallet-adapter-react-ui/styles.css";
 
-// Define Optimism Sepolia chain
-const optimismSepolia: Chain = {
-  id: 11155420,
-  name: "Optimism Sepolia",
-  nativeCurrency: {
-    name: "Sepolia ETH",
-    symbol: "ETH",
-    decimals: 18,
-  },
-  rpcUrls: {
-    default: {
-      http: ["https://sepolia.optimism.io"],
-    },
-    public: {
-      http: ["https://sepolia.optimism.io"],
-    },
-  },
-  blockExplorers: {
-    default: {
-      name: "Etherscan",
-      url: "https://sepolia-optimism.etherscan.io",
-    },
-  },
-  testnet: true,
+// Ensure Buffer/process globals exist for Solana libraries when bundled with Vite
+if (typeof window !== "undefined") {
+  const w = window as unknown as Record<string, unknown>;
+  if (!w.Buffer) {
+    w.Buffer = Buffer;
+  }
+  if (!w.process) {
+    w.process = process;
+  }
+}
+
+const SolanaProviders: React.FC<PropsWithChildren> = ({ children }) => {
+  const network = WalletAdapterNetwork.Devnet;
+  const endpoint = useMemo(() => {
+    return (
+      import.meta.env.VITE_SOLANA_RPC_URL ||
+      clusterApiUrl(network)
+    );
+  }, [network]);
+
+  const wallets = useMemo(
+    () => [
+      new PhantomWalletAdapter(),
+      new SolflareWalletAdapter({ network }),
+    ],
+    [network]
+  );
+
+  return (
+    <ConnectionProvider endpoint={endpoint} config={{ commitment: "confirmed" }}>
+      <WalletProvider wallets={wallets} autoConnect>
+        <WalletModalProvider>{children}</WalletModalProvider>
+      </WalletProvider>
+    </ConnectionProvider>
+  );
 };
 
-// Configure chains and provider
-const { chains, publicClient, webSocketPublicClient } = configureChains(
-  [optimismSepolia],
-  [publicProvider()]
-);
+const rootElement = document.getElementById("root");
 
-// Create the Wagmi client
-const wagmiConfig = createConfig({
-  autoConnect: true,
-  connectors: [
-    new MetaMaskConnector({
-      chains,
-      options: {
-        shimDisconnect: true,
-      },
-    }),
-  ],
-  publicClient,
-  webSocketPublicClient,
-});
+if (!rootElement) {
+  throw new Error("Root element #root not found");
+}
 
-const rootElement = document.getElementById("root")!;
 const root = ReactDOM.createRoot(rootElement);
 
 root.render(
   <React.StrictMode>
-    <WagmiConfig config={wagmiConfig}>
+    <SolanaProviders>
       <ChakraProvider theme={theme}>
         <BrowserRouter>
           <App />
         </BrowserRouter>
       </ChakraProvider>
-    </WagmiConfig>
+    </SolanaProviders>
   </React.StrictMode>
 );

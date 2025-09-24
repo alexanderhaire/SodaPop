@@ -1,6 +1,4 @@
-// File: frontend/src/pages/ItemDetail.tsx
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Box,
@@ -21,6 +19,8 @@ import {
   FormControl,
   FormLabel,
   Input,
+  Badge,
+  Stack,
   Link,
 } from "@chakra-ui/react";
 import {
@@ -31,185 +31,90 @@ import {
   Tooltip as ChartTooltip,
   ResponsiveContainer,
 } from "recharts";
-import { ethers } from "ethers";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
+import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import axios from "../utils/axiosConfig";
-import {
-  useAccount,
-  usePrepareContractWrite,
-  useContractWrite,
-} from "wagmi";
-import { readContract } from "@wagmi/core";
-import { parseEther } from "viem";
-import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
-import items from "../mocks/items.json";
+import itemsData from "../mocks/items.json";
+import assetsData from "../mocks/assets.json";
+import { formatAddress } from "../utils/formatAddress";
+
+type MarketDatum = { price: number; timestamp: string };
+
+type Asset = {
+  id: string;
+  name: string;
+  image: string;
+  owner: string;
+  sharePrice: number; // in SOL
+  totalShares: number;
+  treasury: string;
+  mintAddress?: string;
+  buyers: Partial<Record<string, number>>;
+};
 
 const ItemDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { address } = useAccount();
   const toast = useToast();
-  const tokenId = id ? items.findIndex((h) => h.id === id) : -1;
+  const { publicKey, connected, sendTransaction } = useWallet();
+  const { connection } = useConnection();
+
+  const item = useMemo(
+    () => itemsData.find((candidate) => candidate.id === id),
+    [id]
+  );
+  const asset = useMemo(
+    () => (assetsData as Asset[]).find((candidate) => candidate.id === id),
+    [id]
+  );
 
   const [maxSupply, setMaxSupply] = useState<number | null>(null);
   const [mintedSoFar, setMintedSoFar] = useState<number | null>(null);
   const [remainingSupply, setRemainingSupply] = useState<number | null>(null);
   const [sharesOwned, setSharesOwned] = useState<number | null>(null);
-  const [sharePrice, setSharePrice] = useState<number | null>(null);
-  const [offeringShares, setOfferingShares] = useState<number | null>(null);
   const [calcShares, setCalcShares] = useState<string>("");
   const [calcEarnings, setCalcEarnings] = useState<string>("");
-  const [marketData, setMarketData] = useState<{ price: number; timestamp: string }[]>([]);
+  const [marketData, setMarketData] = useState<MarketDatum[]>([]);
   const [latestPrice, setLatestPrice] = useState<number | null>(null);
-  const [horseProfile, setHorseProfile] = useState<
-    | {
-        name: string;
-        trackLocation: string;
-        streamUrl: string;
-        legalContractUri: string;
-        metadataUri: string;
-        owner: string;
-        verified: boolean;
-      }
-    | null
-  >(null);
-  const [ownershipVerified, setOwnershipVerified] = useState<boolean | null>(null);
-
-  const {
-    config,
-    isLoading: isPreparing,
-    error: prepareError,
-    isSuccess: canMint,
-  } = usePrepareContractWrite({
-    address: HORSE_TOKEN_ADDRESS,
-    abi: horseTokenABI,
-    functionName: "mint",
-    args: [address, tokenId, 1],
-    overrides: { value: parseEther("0.00001") },
-    chainId: 11155420,
-    enabled: Boolean(address && tokenId >= 0),
-  });
-
-  const {
-    writeAsync: mintAsync,
-    isLoading: isMinting,
-    error: mintError,
-  } = useContractWrite(config);
-
-  const {
-    config: buyMaxConfig,
-    isLoading: isPreparingMax,
-    error: prepareMaxError,
-    isSuccess: canBuyMax,
-  } = usePrepareContractWrite({
-    address: HORSE_TOKEN_ADDRESS,
-    abi: horseTokenABI,
-    functionName: "mint",
-    args: [address, tokenId, remainingSupply ?? 0],
-    overrides:
-      remainingSupply !== null
-        ? { value: BigInt(remainingSupply) * parseEther("0.00001") }
-        : undefined,
-    chainId: 11155420,
-    enabled: Boolean(
-      address &&
-      tokenId >= 0 &&
-      remainingSupply !== null &&
-      remainingSupply > 0
-    ),
-  });
-
-  const {
-    writeAsync: buyMaxAsync,
-    isLoading: isBuyingMax,
-    error: buyMaxError,
-  } = useContractWrite(buyMaxConfig);
 
   useEffect(() => {
-    if (tokenId < 0) return;
-    const fetchSupply = async () => {
-      try {
-        const [maxOnChain, mintedOnChain] = await Promise.all([
-          readContract(undefined as any, {
-            address: HORSE_TOKEN_ADDRESS,
-            abi: horseTokenABI,
-            functionName: "maxSupply",
-            args: [tokenId],
-            chainId: 11155420,
-          }),
-          readContract(undefined as any, {
-            address: HORSE_TOKEN_ADDRESS,
-            abi: horseTokenABI,
-            functionName: "horseSupply",
-            args: [tokenId],
-            chainId: 11155420,
-          }),
-        ]);
+    if (!asset) {
+      setMaxSupply(null);
+      setMintedSoFar(null);
+      setRemainingSupply(null);
+      return;
+    }
 
-        const maxNum = Number(maxOnChain);
-        const mintedNum = Number(mintedOnChain);
-        setMaxSupply(maxNum);
-        setMintedSoFar(mintedNum);
-        setRemainingSupply(maxNum - mintedNum);
-      } catch (err) {
-        console.error("Failed to fetch on-chain supply:", err);
-      }
-    };
-    fetchSupply();
-  }, [tokenId]);
+    const minted = Object.values(asset.buyers).reduce<number>(
+      (acc, value) => acc + (value ?? 0),
+      0
+    );
+    setMaxSupply(asset.totalShares);
+    setMintedSoFar(minted);
+    setRemainingSupply(Math.max(asset.totalShares - minted, 0));
+  }, [asset]);
 
   useEffect(() => {
-    if (tokenId < 0) return;
-    const fetchOffering = async () => {
-      try {
-        const [price, total] = (await readContract(undefined as any, {
-          address: HORSE_TOKEN_ADDRESS,
-          abi: horseTokenABI,
-          functionName: "getItemOffering",
-          args: [tokenId],
-          chainId: 11155420,
-        })) as unknown as [bigint, bigint];
-
-        setSharePrice(Number(price));
-        setOfferingShares(Number(total));
-      } catch (err) {
-        console.error("Failed to fetch item offering:", err);
-      }
-    };
-    fetchOffering();
-  }, [tokenId]);
-
-  useEffect(() => {
-    if (!address || tokenId < 0) {
+    if (!asset || !publicKey) {
       setSharesOwned(null);
       return;
     }
-    const fetchBalance = async () => {
-      try {
-        const bal = await readContract(undefined as any, {
-          address: HORSE_TOKEN_ADDRESS,
-          abi: horseTokenABI,
-          functionName: "balanceOf",
-          args: [address, tokenId],
-          chainId: 11155420,
-        });
-        setSharesOwned(Number(bal));
-      } catch (err) {
-        console.error("Failed to fetch shares balance:", err);
-        setSharesOwned(null);
-      }
-    };
-    fetchBalance();
-  }, [address, tokenId]);
+    const walletAddress = publicKey.toBase58();
+    const entry = Object.entries(asset.buyers).find(
+      ([holder]) => holder === walletAddress
+    );
+    setSharesOwned(entry ? entry[1] ?? 0 : 0);
+  }, [asset, publicKey]);
 
   useEffect(() => {
     if (!id) return;
     const fetchMarket = async () => {
       try {
         const res = await axios.get(`/asset/market-data/${id}`);
-        const data = res.data as { price: number; timestamp: string };
+        const data = res.data as MarketDatum;
         setMarketData((prev) => [...prev.slice(-19), data]);
         setLatestPrice(data.price);
       } catch (err) {
-        console.error('Failed to load market data:', err);
+        console.error("Failed to load market data:", err);
       }
     };
     fetchMarket();
@@ -217,63 +122,90 @@ const ItemDetail: React.FC = () => {
     return () => clearInterval(interval);
   }, [id]);
 
-  useEffect(() => {
-    if (tokenId < 0) return;
-    const fetchHorseProfile = async () => {
-      try {
-        const result = (await readContract(undefined as any, {
-          address: HORSE_TOKEN_ADDRESS,
-          abi: horseTokenABI,
-          functionName: "getHorseProfile",
-          args: [tokenId],
-          chainId: 11155420,
-        })) as unknown as [
-          string,
-          string,
-          string,
-          string,
-          string,
-          string,
-          boolean
-        ];
+  const sharePriceSol = asset?.sharePrice ?? 0;
+  const sharePriceLamports = Math.round(sharePriceSol * LAMPORTS_PER_SOL);
 
-        const [name, trackLocation, streamUrl, legalContractUri, metadataUri, owner, verified] =
-          result;
+  const handleBuyShare = async () => {
+    if (!asset) return;
+    if (!connected || !publicKey || !sendTransaction) {
+      toast({
+        title: "Connect your wallet",
+        description: "Link a Solana wallet to purchase shares.",
+        status: "error",
+      });
+      return;
+    }
 
-        const profile = {
-          name,
-          trackLocation,
-          streamUrl,
-          legalContractUri,
-          metadataUri,
-          owner,
-          verified,
-        };
-        setHorseProfile(profile);
+    if (!remainingSupply || remainingSupply <= 0) {
+      toast({
+        title: "Allocation complete",
+        description: "All available shares have been issued.",
+        status: "info",
+      });
+      return;
+    }
 
-        if (verified && owner && owner !== ethers.ZeroAddress && legalContractUri) {
-          const isVerified = await readContract(undefined as any, {
-            address: HORSE_TOKEN_ADDRESS,
-            abi: horseTokenABI,
-            functionName: "verifyHorseOwnership",
-            args: [owner, tokenId, legalContractUri],
-            chainId: 11155420,
-          });
-          setOwnershipVerified(Boolean(isVerified));
-        } else {
-          setOwnershipVerified(false);
-        }
-      } catch (err) {
-        console.error("Failed to load horse profile:", err);
-        setHorseProfile(null);
-        setOwnershipVerified(null);
-      }
-    };
-    fetchHorseProfile();
-  }, [tokenId]);
+    try {
+      const treasury = new PublicKey(asset.treasury);
+      const { blockhash, lastValidBlockHeight } =
+        await connection.getLatestBlockhash();
 
-  const item = items.find((i) => i.id === id);
-  if (!item) {
+      const transaction = new Transaction();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = publicKey;
+      transaction.add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey,
+          toPubkey: treasury,
+          lamports: sharePriceLamports,
+        })
+      );
+
+      const signature = await sendTransaction(transaction, connection);
+      await connection.confirmTransaction(
+        { signature, blockhash, lastValidBlockHeight },
+        "confirmed"
+      );
+
+      setSharesOwned((prev) => (prev ?? 0) + 1);
+      setMintedSoFar((prev) => (prev ?? 0) + 1);
+      setRemainingSupply((prev) => (prev !== null ? Math.max(prev - 1, 0) : prev));
+
+      toast({
+        title: "Share purchased",
+        description: `Sent ${sharePriceSol.toFixed(3)} SOL to the treasury`,
+        status: "success",
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Failed to send transaction:", err);
+      toast({
+        title: "Transaction failed",
+        description: message,
+        status: "error",
+      });
+    }
+  };
+
+  const projectedReturn = useMemo(() => {
+    if (!calcShares || !calcEarnings || !maxSupply) return "0";
+    const shares = Number(calcShares);
+    const earningsSol = Number(calcEarnings);
+    if (!Number.isFinite(shares) || !Number.isFinite(earningsSol) || shares <= 0) {
+      return "0";
+    }
+    const shareOfPool = shares / maxSupply;
+    return (shareOfPool * earningsSol).toFixed(3);
+  }, [calcShares, calcEarnings, maxSupply]);
+
+  const ownershipPercent = useMemo(() => {
+    if (!calcShares || !maxSupply) return 0;
+    const shares = Number(calcShares);
+    if (!Number.isFinite(shares) || shares <= 0) return 0;
+    return (shares / maxSupply) * 100;
+  }, [calcShares, maxSupply]);
+
+  if (!item || !asset) {
     return (
       <Box p={6}>
         <Heading>Item not found</Heading>
@@ -282,241 +214,222 @@ const ItemDetail: React.FC = () => {
     );
   }
 
-  const handleBuyShare = async () => {
-    if (!address) return alert("Please connect your wallet first.");
-    if (isPreparing) return alert("Preparing transaction—please wait.");
-    if (prepareError) {
-      console.error("Prepare error:", prepareError);
-      return alert("Failed to prepare transaction.");
-    }
-    if (!canMint || !mintAsync) return alert("Transaction not ready yet.");
-    try {
-      const tx = await mintAsync();
-      alert(`Transaction sent! Hash: ${tx.hash}`);
-    } catch (err) {
-      console.error("Mint failed:", err);
-      alert("Transaction failed.");
-    }
-  };
-
-  const handleBuyMax = async () => {
-    if (!address) return alert("Please connect your wallet first.");
-    if (isPreparingMax) return alert("Preparing transaction—please wait.");
-    if (prepareMaxError) {
-      console.error("Prepare error:", prepareMaxError);
-      return alert("Failed to prepare transaction.");
-    }
-    if (!canBuyMax || !buyMaxAsync) return alert("Transaction not ready yet.");
-    try {
-      const tx = await buyMaxAsync();
-      toast({
-        title: `Purchased remaining shares!`,
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-      });
-    } catch (err) {
-      console.error("Mint failed:", err);
-      alert("Transaction failed.");
-    }
-  };
-
-  const projectedReturn = React.useMemo(() => {
-    if (!calcShares || !calcEarnings || !maxSupply) return "0";
-    try {
-      const earningsWei = ethers.parseEther(calcEarnings);
-      const resultWei = (earningsWei * BigInt(Number(calcShares))) / BigInt(maxSupply);
-      return ethers.formatEther(resultWei);
-    } catch {
-      return "0";
-    }
-  }, [calcShares, calcEarnings, maxSupply]);
-
-  const ownershipPercent = React.useMemo(() => {
-    if (!calcShares || !maxSupply) return 0;
-    return (Number(calcShares) / maxSupply) * 100;
-  }, [calcShares, maxSupply]);
-
   return (
     <Box
-      p={{ base: 6, md: 10 }}
       maxW="960px"
       mx="auto"
+      p={{ base: 6, md: 10 }}
       bg="rgba(9, 14, 30, 0.82)"
       borderRadius="3xl"
       border="1px solid rgba(148, 163, 255, 0.22)"
       boxShadow="0 28px 70px rgba(4, 9, 24, 0.75)"
     >
-      <Heading mb={4}>
-        {item.name}
-      </Heading>
-      <Box h="250px" mb={4}>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={marketData}>
-            <XAxis dataKey="timestamp" hide />
-            <YAxis domain={['dataMin', 'dataMax']} hide />
-            <ChartTooltip />
-            <Line type="monotone" dataKey="price" stroke="#805AD5" dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
-      </Box>
-      <Divider mb={4} />
-
-      <VStack spacing={3} align="start" color="whiteAlpha.800">
-        <Text>
-          <strong>Age:</strong> {item.age}
-        </Text>
-        <Text>
-          <strong>Trainer:</strong> {item.trainer}
-        </Text>
-        <Text>
-          <strong>Record:</strong> {item.record}
-        </Text>
-        <Text>
-          <strong>Earnings:</strong> {item.earnings}
-        </Text>
-
-        {sharePrice !== null && (
-          <Text>
-            <strong>Share Price:</strong> {sharePrice} wei
-          </Text>
-        )}
-        {offeringShares !== null && (
-          <Text>
-            <strong>Total Shares:</strong> {offeringShares}
-          </Text>
-        )}
-        {maxSupply !== null && mintedSoFar !== null && (
+      <VStack align="stretch" spacing={6}>
+        <HStack align={{ base: "stretch", md: "center" }} spacing={6}>
+          <Image
+            src={item.image}
+            alt={item.name}
+            boxSize={{ base: "160px", md: "200px" }}
+            borderRadius="2xl"
+            objectFit="cover"
+          />
           <Box>
-            <Text>
-              <strong>Minted:</strong> {mintedSoFar} / {maxSupply}
+            <Heading size="lg" mb={1}>
+              {item.name}
+            </Heading>
+            <Text color="whiteAlpha.700" fontSize="sm" mb={3}>
+              {item.record}
             </Text>
-            <Text>
-              <strong>Remaining:</strong> {remainingSupply}
-            </Text>
+            <HStack spacing={3} flexWrap="wrap">
+              <Badge colorScheme="purple">Variable asset</Badge>
+              <Badge colorScheme="cyan">Minted on Solana</Badge>
+              <Badge colorScheme="pink">{asset.totalShares} total shares</Badge>
+            </HStack>
           </Box>
-        )}
-        {sharesOwned !== null && (
-          <Text color="whiteAlpha.700">
-            You command {sharesOwned} share{sharesOwned !== 1 && "s"} of this asset.
-          </Text>
-        )}
-      </VStack>
+        </HStack>
 
-      <HStack mt={6} spacing={4}>
-        <Button variant="grey" size="sm">
-          Shares: {sharesOwned ?? 0}
-        </Button>
-        <Button variant="grey" size="sm">
-          Total Value: {latestPrice && sharesOwned ? (latestPrice * sharesOwned).toFixed(2) : 0}
-        </Button>
-      </HStack>
+        <Divider />
 
-      <HStack mt={4} spacing={4}>
-        <Button variant="cta" onClick={handleBuyShare} isLoading={isPreparing || isMinting}>
-          Acquire share for 0.00001 ETH
-        </Button>
-        <Tooltip
-          label="Allocation complete"
-          isDisabled={remainingSupply !== null && remainingSupply > 0}
-        >
-          <Button
-            variant="grey"
-            size="sm"
-            onClick={handleBuyMax}
-            isDisabled={remainingSupply !== null && remainingSupply <= 0}
-            isLoading={isPreparingMax || isBuyingMax}
+        <Stack direction={{ base: "column", md: "row" }} spacing={6}>
+          <Box
+            flex="1"
+            bg="rgba(12, 18, 38, 0.9)"
+            borderRadius="2xl"
+            border="1px solid rgba(114, 140, 255, 0.2)"
+            p={4}
+            minH="260px"
           >
-            Buy Max
-          </Button>
-        </Tooltip>
-      </HStack>
+            {marketData.length === 0 ? (
+              <Text color="whiteAlpha.600">Streaming market data…</Text>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={marketData}>
+                  <XAxis dataKey="timestamp" hide />
+                  <YAxis stroke="#cbd5f5" tick={{ fill: "#cbd5f5" }} />
+                  <ChartTooltip />
+                  <Line
+                    type="monotone"
+                    dataKey="price"
+                    stroke="#7c3aed"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </Box>
 
-      <Accordion allowToggle mt={4}>
-        <AccordionItem>
-          <AccordionButton>
-            <Box flex="1" textAlign="left">Projected Earnings</Box>
-            <AccordionIcon />
-          </AccordionButton>
-          <AccordionPanel pb={4}>
-            <VStack spacing={3} align="stretch">
-              <FormControl>
-                <FormLabel>Number of Shares</FormLabel>
-                <Input
-                  type="number"
-                  value={calcShares}
-                  onChange={(e) => setCalcShares(e.target.value)}
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel>Projected Item Earnings (ETH)</FormLabel>
-                <Input
-                  type="number"
-                  value={calcEarnings}
-                  onChange={(e) => setCalcEarnings(e.target.value)}
-                />
-              </FormControl>
-              {calcShares && calcEarnings && maxSupply !== null && (
-                <Text>
-                  You would earn {projectedReturn} ETH ({ownershipPercent.toFixed(2)}% ownership)
-                </Text>
-              )}
-              <Text fontSize="sm" color="whiteAlpha.600">
-                This projection is indicative. Chain activity may shift returns.
-              </Text>
-            </VStack>
-          </AccordionPanel>
-        </AccordionItem>
-      </Accordion>
-
-      {horseProfile && (
-        <Box mt={6} w="100%">
-          <Divider mb={4} />
-          <Heading size="md" mb={2}>
-            Ownership & Compliance
-          </Heading>
-          <VStack align="start" spacing={2} fontSize="sm">
-            {horseProfile.name && (
-              <Text>
-                <strong>Registered Horse:</strong> {horseProfile.name}
-              </Text>
-            )}
-            {horseProfile.trackLocation && (
-              <Text>
-                <strong>Primary Track:</strong> {horseProfile.trackLocation}
-              </Text>
-            )}
-            {horseProfile.owner && horseProfile.owner !== ethers.ZeroAddress && (
-              <Text>
-                <strong>On-Chain Owner:</strong> {horseProfile.owner}
-              </Text>
-            )}
-            {horseProfile.streamUrl && (
-              <Text>
-                <strong>Live Stream:</strong>{" "}
-                <Link href={horseProfile.streamUrl} color="purple.600" isExternal>
-                  Watch race feed
-                </Link>
-              </Text>
-            )}
-            {horseProfile.legalContractUri && (
-              <Text>
-                <strong>Legal Contract:</strong>{" "}
-                <Link href={horseProfile.legalContractUri} color="cyan.300" isExternal>
-                  View signed agreement
-                </Link>
-              </Text>
-            )}
-            {ownershipVerified !== null && (
-              <Text color={ownershipVerified ? "green.300" : "red.400"} fontWeight="semibold">
-                {ownershipVerified
-                  ? "Ownership verified on-chain via legal contract reference."
-                  : "Ownership verification pending or legal reference mismatch."}
+          <VStack
+            flex="0.45"
+            bg="rgba(12, 18, 38, 0.9)"
+            borderRadius="2xl"
+            border="1px solid rgba(114, 140, 255, 0.2)"
+            p={5}
+            spacing={3}
+            align="stretch"
+          >
+            <Heading size="sm">Signal summary</Heading>
+            <Text color="whiteAlpha.700">
+              Latest trade price: {latestPrice ? latestPrice.toFixed(3) : "-"} SOL
+            </Text>
+            <Text color="whiteAlpha.700">
+              Mint address: {asset.mintAddress ? formatAddress(asset.mintAddress) : "—"}
+            </Text>
+            <Text color="whiteAlpha.700">
+              Treasury: {formatAddress(asset.treasury)}
+            </Text>
+            <Text color="whiteAlpha.700">
+              Share price: {sharePriceSol.toFixed(3)} SOL
+            </Text>
+            <Text color="whiteAlpha.700">
+              Shares issued: {mintedSoFar ?? 0} / {maxSupply ?? 0}
+            </Text>
+            {remainingSupply !== null && (
+              <Text color={remainingSupply > 0 ? "green.300" : "red.300"}>
+                {remainingSupply > 0
+                  ? `${remainingSupply} shares remain`
+                  : "All shares sold"}
               </Text>
             )}
           </VStack>
+        </Stack>
+
+        <VStack align="stretch" spacing={3}>
+          <Heading size="md">Share controls</Heading>
+          {sharesOwned !== null && (
+            <Text color="whiteAlpha.700">
+              You command {sharesOwned} share{sharesOwned === 1 ? "" : "s"} of this asset.
+            </Text>
+          )}
+          <HStack spacing={4} wrap="wrap">
+            <Button variant="grey" size="sm">
+              Shares owned: {sharesOwned ?? 0}
+            </Button>
+            <Button variant="grey" size="sm">
+              Treasury price: {sharePriceSol.toFixed(3)} SOL
+            </Button>
+          </HStack>
+          <HStack mt={2} spacing={4} wrap="wrap">
+            <Button variant="cta" onClick={handleBuyShare}>
+              Acquire share for {sharePriceSol.toFixed(3)} SOL
+            </Button>
+            <Tooltip
+              label="Allocation complete"
+              isDisabled={remainingSupply !== null && remainingSupply > 0}
+            >
+              <Button
+                variant="grey"
+                size="sm"
+                onClick={() =>
+                  toast({
+                    title: "Bulk purchase",
+                    description:
+                      "Treasury purchases are handled off-chain for compliance.",
+                    status: "info",
+                  })
+                }
+              >
+                Buy Max
+              </Button>
+            </Tooltip>
+          </HStack>
+        </VStack>
+
+        <Accordion allowToggle>
+          <AccordionItem>
+            <AccordionButton>
+              <Box flex="1" textAlign="left">
+                Projected earnings
+              </Box>
+              <AccordionIcon />
+            </AccordionButton>
+            <AccordionPanel pb={4}>
+              <VStack spacing={3} align="stretch">
+                <FormControl>
+                  <FormLabel>Number of Shares</FormLabel>
+                  <Input
+                    type="number"
+                    value={calcShares}
+                    onChange={(event) => setCalcShares(event.target.value)}
+                  />
+                </FormControl>
+                <FormControl>
+                  <FormLabel>Projected Item Earnings (SOL)</FormLabel>
+                  <Input
+                    type="number"
+                    value={calcEarnings}
+                    onChange={(event) => setCalcEarnings(event.target.value)}
+                  />
+                </FormControl>
+                {calcShares && calcEarnings && maxSupply !== null && (
+                  <Text>
+                    You would earn {projectedReturn} SOL ({ownershipPercent.toFixed(2)}%
+                    ownership)
+                  </Text>
+                )}
+                <Text fontSize="sm" color="whiteAlpha.600">
+                  This projection is indicative. Live treasury actions and validator fees may
+                  adjust returns.
+                </Text>
+              </VStack>
+            </AccordionPanel>
+          </AccordionItem>
+        </Accordion>
+
+        <Box>
+          <Divider my={4} />
+          <Heading size="md" mb={2}>
+            On-chain references
+          </Heading>
+          <VStack align="start" spacing={2} fontSize="sm">
+            {asset.mintAddress && (
+              <Text>
+                <strong>Mint:</strong>{" "}
+                <Link
+                  href={`https://explorer.solana.com/address/${asset.mintAddress}?cluster=devnet`}
+                  color="cyan.300"
+                  isExternal
+                >
+                  {asset.mintAddress}
+                </Link>
+              </Text>
+            )}
+            <Text>
+              <strong>Treasury:</strong>{" "}
+              <Link
+                href={`https://explorer.solana.com/address/${asset.treasury}?cluster=devnet`}
+                color="cyan.300"
+                isExternal
+              >
+                {asset.treasury}
+              </Link>
+            </Text>
+            <Text>
+              <strong>Manager:</strong> {formatAddress(asset.owner)}
+            </Text>
+          </VStack>
         </Box>
-      )}
+      </VStack>
     </Box>
   );
 };

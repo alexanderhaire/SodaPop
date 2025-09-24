@@ -22,25 +22,36 @@ import {
   useToast,
   VStack,
 } from "@chakra-ui/react";
-import { useAccount, usePublicClient, useWalletClient } from "wagmi";
-import { Hex, parseUnits } from "viem";
+import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import {
-  getTokenFactoryAddress,
-  tokenFactoryAbi,
-  tryDecodeTokenCreatedLog,
-} from "../utils/tokenFactory";
+  Keypair,
+  SystemProgram,
+  Transaction,
+  TransactionSignature,
+} from "@solana/web3.js";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  MINT_SIZE,
+  TOKEN_PROGRAM_ID,
+  createAssociatedTokenAccountInstruction,
+  createInitializeMintInstruction,
+  createMintToInstruction,
+  getAssociatedTokenAddressSync,
+  getMinimumBalanceForRentExemptMint,
+} from "@solana/spl-token";
 
-const DEFAULT_DECIMALS = 18;
+const DEFAULT_DECIMALS = 9;
 
 interface DeployState {
-  txHash?: `0x${string}`;
-  tokenAddress?: `0x${string}`;
+  signature?: TransactionSignature;
+  mintAddress?: string;
+  tokenAccount?: string;
   error?: string;
 }
 
-const formatHash = (hash?: `0x${string}`) => {
-  if (!hash) return "";
-  return `${hash.slice(0, 6)}…${hash.slice(-4)}`;
+const formatSignature = (signature?: string) => {
+  if (!signature) return "";
+  return `${signature.slice(0, 8)}…${signature.slice(-6)}`;
 };
 
 const formatFileSize = (bytes: number) => {
@@ -53,11 +64,29 @@ const formatFileSize = (bytes: number) => {
   return `${bytes} B`;
 };
 
+const parseTokenSupply = (raw: string, decimals: number): bigint => {
+  const cleaned = raw.replace(/,/g, "").trim();
+  if (!cleaned) {
+    throw new Error("Initial supply is required");
+  }
+
+  if (!/^\d+(\.\d+)?$/.test(cleaned)) {
+    throw new Error("Supply must be a positive number");
+  }
+
+  const [whole, fraction = ""] = cleaned.split(".");
+  const paddedFraction = fraction.slice(0, decimals).padEnd(decimals, "0");
+
+  const wholeUnits = BigInt(whole || "0") * 10n ** BigInt(decimals);
+  const fractionUnits = paddedFraction ? BigInt(paddedFraction) : 0n;
+
+  return wholeUnits + fractionUnits;
+};
+
 const CreateItemForm = () => {
   const toast = useToast();
-  const { address, isConnected } = useAccount();
-  const { data: walletClient } = useWalletClient();
-  const publicClient = usePublicClient();
+  const { publicKey, connected, sendTransaction } = useWallet();
+  const { connection } = useConnection();
 
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
@@ -67,16 +96,7 @@ const CreateItemForm = () => {
   const [isDeploying, setIsDeploying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const factoryAddress = useMemo(() => {
-    try {
-      return getTokenFactoryAddress();
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Token factory address missing";
-      setState((prev) => ({ ...prev, error: message }));
-      return undefined;
-    }
-  }, []);
+  const networkEndpoint = useMemo(() => connection.rpcEndpoint, [connection]);
 
   const resetStatus = () => setState({});
 
@@ -130,17 +150,17 @@ const CreateItemForm = () => {
     event.preventDefault();
     resetStatus();
 
-    if (!walletClient || !publicClient || !factoryAddress) {
+    if (!publicKey || !connected || !sendTransaction) {
       toast({
         title: "Wallet not connected",
-        description: "Connect your wallet to deploy a token.",
+        description: "Connect a Solana wallet to deploy a token.",
         status: "error",
       });
       return;
     }
 
     const trimmedName = name.trim();
-    const trimmedSymbol = symbol.trim();
+    const trimmedSymbol = symbol.trim().toUpperCase();
 
     if (!trimmedName || !trimmedSymbol) {
       toast({
@@ -153,13 +173,10 @@ const CreateItemForm = () => {
 
     let supply: bigint;
     try {
-      supply = parseUnits(initialSupply, DEFAULT_DECIMALS);
+      supply = parseTokenSupply(initialSupply, DEFAULT_DECIMALS);
     } catch (err) {
-      toast({
-        title: "Invalid supply",
-        description: "Enter a numeric initial supply.",
-        status: "error",
-      });
+      const message = err instanceof Error ? err.message : "Invalid supply";
+      toast({ title: "Invalid supply", description: message, status: "error" });
       return;
     }
 
@@ -175,34 +192,71 @@ const CreateItemForm = () => {
     setIsDeploying(true);
 
     try {
-      const hash = await walletClient.writeContract({
-        address: factoryAddress,
-        abi: tokenFactoryAbi,
-        functionName: "createToken",
-        args: [trimmedName, trimmedSymbol.toUpperCase(), supply],
-        account: walletClient.account,
+      const mintKeypair = Keypair.generate();
+      const associatedTokenAccount = getAssociatedTokenAddressSync(
+        mintKeypair.publicKey,
+        publicKey
+      );
+
+      const rentExemption = await getMinimumBalanceForRentExemptMint(connection);
+      const { blockhash, lastValidBlockHeight } =
+        await connection.getLatestBlockhash();
+
+      const transaction = new Transaction();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = publicKey;
+
+      transaction.add(
+        SystemProgram.createAccount({
+          fromPubkey: publicKey,
+          newAccountPubkey: mintKeypair.publicKey,
+          space: MINT_SIZE,
+          lamports: rentExemption,
+          programId: TOKEN_PROGRAM_ID,
+        }),
+        createInitializeMintInstruction(
+          mintKeypair.publicKey,
+          DEFAULT_DECIMALS,
+          publicKey,
+          publicKey,
+          TOKEN_PROGRAM_ID
+        ),
+        createAssociatedTokenAccountInstruction(
+          publicKey,
+          associatedTokenAccount,
+          publicKey,
+          mintKeypair.publicKey,
+          TOKEN_PROGRAM_ID,
+          ASSOCIATED_TOKEN_PROGRAM_ID
+        ),
+        createMintToInstruction(
+          mintKeypair.publicKey,
+          associatedTokenAccount,
+          publicKey,
+          supply,
+          [],
+          TOKEN_PROGRAM_ID
+        )
+      );
+
+      const signature = await sendTransaction(transaction, connection, {
+        signers: [mintKeypair],
       });
 
-      setState({ txHash: hash });
+      await connection.confirmTransaction(
+        { signature, blockhash, lastValidBlockHeight },
+        "confirmed"
+      );
 
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      let createdToken: `0x${string}` | undefined;
-
-      for (const log of receipt.logs) {
-        const decoded = tryDecodeTokenCreatedLog(log);
-        if (decoded && decoded.owner.toLowerCase() === address?.toLowerCase()) {
-          createdToken = decoded.token;
-          break;
-        }
-      }
-
-      setState({ txHash: hash, tokenAddress: createdToken });
+      setState({
+        signature,
+        mintAddress: mintKeypair.publicKey.toBase58(),
+        tokenAccount: associatedTokenAccount.toBase58(),
+      });
 
       toast({
-        title: "Token deployed",
-        description: createdToken
-          ? `Token contract deployed at ${createdToken}`
-          : "Transaction confirmed.",
+        title: `${trimmedSymbol} token minted`,
+        description: `${trimmedName} successfully launched on Solana.`,
         status: "success",
       });
     } catch (err) {
@@ -228,22 +282,22 @@ const CreateItemForm = () => {
     >
       <VStack spacing={8} align="stretch">
         <Stack spacing={2}>
-          <Heading size="lg">Spin up a token</Heading>
+          <Heading size="lg">Spin up a Solana token</Heading>
           <Text color="whiteAlpha.700" fontSize="sm">
             Configure a name, symbol, and initial supply. Your wallet will sign a
-            single transaction that deploys a minimal ERC-20 and mints the full
-            supply to you.
+            transaction that deploys a mint, creates your associated token
+            account, and deposits the full supply to you.
           </Text>
         </Stack>
 
-        {!isConnected && (
+        {!connected && (
           <Alert status="info" borderRadius="md">
             <AlertIcon />
             <Stack spacing={1}>
               <AlertTitle>Connect your wallet</AlertTitle>
               <AlertDescription>
-                You need to connect a wallet to deploy tokens through the
-                factory.
+                You need to connect a Solana wallet to deploy tokens through the
+                launcher.
               </AlertDescription>
             </Stack>
           </Alert>
@@ -292,11 +346,10 @@ const CreateItemForm = () => {
             </FormControl>
 
             <FormControl>
-              <FormLabel>Factory contract</FormLabel>
-              <Input value={factoryAddress ?? "Not configured"} isReadOnly />
+              <FormLabel>RPC endpoint</FormLabel>
+              <Input value={networkEndpoint} isReadOnly />
               <FormHelperText>
-                Update <Code>VITE_TOKEN_FACTORY_ADDRESS</Code> to point at your
-                deployment.
+                Configure <Code>VITE_SOLANA_RPC_URL</Code> to target a custom cluster.
               </FormHelperText>
             </FormControl>
 
@@ -364,29 +417,38 @@ const CreateItemForm = () => {
             width="100%"
             isLoading={isDeploying}
             loadingText="Deploying token"
-            isDisabled={!isConnected || !factoryAddress}
+            isDisabled={!connected}
           >
             Launch token
           </Button>
         </Box>
 
-        {(state.txHash || state.tokenAddress) && (
+        {(state.signature || state.mintAddress) && (
           <Stack spacing={4}>
-            {state.txHash && (
+            {state.signature && (
               <Box>
                 <Text fontWeight="semibold" mb={1}>
-                  Transaction hash
+                  Transaction signature
                 </Text>
-                <Code>{formatHash(state.txHash)}</Code>
+                <Code>{formatSignature(state.signature)}</Code>
               </Box>
             )}
 
-            {state.tokenAddress && (
+            {state.mintAddress && (
               <Box>
                 <Text fontWeight="semibold" mb={1}>
-                  Token address
+                  Mint address
                 </Text>
-                <Code>{state.tokenAddress}</Code>
+                <Code>{state.mintAddress}</Code>
+              </Box>
+            )}
+
+            {state.tokenAccount && (
+              <Box>
+                <Text fontWeight="semibold" mb={1}>
+                  Associated token account
+                </Text>
+                <Code>{state.tokenAccount}</Code>
               </Box>
             )}
           </Stack>

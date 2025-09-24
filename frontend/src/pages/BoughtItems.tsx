@@ -7,7 +7,7 @@ import {
   VStack,
   Badge,
 } from "@chakra-ui/react";
-import { useAccount } from "wagmi";
+import { useWallet } from "@solana/wallet-adapter-react";
 import assetsData from "../mocks/assets.json";
 import { motion } from "framer-motion";
 
@@ -18,14 +18,15 @@ interface Asset {
   owner: string;
   sharePrice: number;
   totalShares: number;
-  buyers: Record<string, number>;
+  buyers: Partial<Record<string, number>>;
 }
 
 const assets = assetsData as unknown as Asset[];
 const MotionBox = motion(Box);
 
 const BoughtItems: React.FC = () => {
-  const { address } = useAccount();
+  const { publicKey } = useWallet();
+  const address = publicKey?.toBase58();
   const bought = React.useMemo(() => {
     if (!address) return [] as typeof assets;
     return assets.filter((item) =>
@@ -54,7 +55,7 @@ const BoughtItems: React.FC = () => {
           const key = Object.keys(item.buyers).find(
             (b) => b.toLowerCase() === address?.toLowerCase()
           );
-          const shares = key ? item.buyers[key] : 0;
+          const shares = key ? item.buyers[key] ?? 0 : 0;
           const cost = shares * item.sharePrice;
           return (
             <MotionBox
@@ -83,7 +84,7 @@ const BoughtItems: React.FC = () => {
                 <Heading size="md">{item.name}</Heading>
                 <Text color="whiteAlpha.700">{shares} shares secured</Text>
                 <Text color="whiteAlpha.600" fontSize="sm">
-                  Entry cost: {cost} ETH • Share price: {item.sharePrice} ETH
+                  Entry cost: {cost.toFixed(3)} SOL • Share price: {item.sharePrice} SOL
                 </Text>
                 <Badge colorScheme="cyan" mt={2} borderRadius="full">
                   Portfolio holding

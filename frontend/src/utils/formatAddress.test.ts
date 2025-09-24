@@ -1,4 +1,5 @@
-import { formatAddress } from './formatAddress';
+import { describe, it, expect } from "vitest";
+import { formatAddress } from "./formatAddress";
 
 describe('formatAddress', () => {
   it('formats short address', () => {

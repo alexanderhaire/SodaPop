@@ -1,13 +1,15 @@
-import { ethers } from "ethers";
-import { ALCHEMY_API_URL } from "../utils/config";
+import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { SOLANA_RPC_URL } from "../utils/config";
 
-const provider = new ethers.JsonRpcProvider(ALCHEMY_API_URL);
+const connection = new Connection(SOLANA_RPC_URL, "confirmed");
 
-export async function getEthBalance(address: string): Promise<string> {
-  if (!ethers.isAddress(address)) {
-    throw new Error("Invalid Ethereum address.");
+export async function getSolBalance(address: string): Promise<string> {
+  try {
+    const pubkey = new PublicKey(address);
+    const balanceLamports = await connection.getBalance(pubkey);
+    const balanceSol = balanceLamports / LAMPORTS_PER_SOL;
+    return balanceSol.toFixed(4);
+  } catch (err) {
+    throw new Error("Invalid Solana address.");
   }
-  const balanceWei = await provider.getBalance(address);
-  const balanceEth = ethers.formatEther(balanceWei);
-  return balanceEth;
 }

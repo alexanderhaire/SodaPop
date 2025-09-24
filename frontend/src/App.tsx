@@ -15,7 +15,14 @@ import {
   Badge,
   Stack,
 } from "@chakra-ui/react";
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useMemo, useState } from "react";
+import {
+  useWallet,
+} from "@solana/wallet-adapter-react";
+import {
+  WalletReadyState,
+  WalletName,
+} from "@solana/wallet-adapter-base";
 import { clearToken } from "./utils/authToken";
 import { formatAddress } from "./utils/formatAddress";
 import ItemList from "./pages/ItemList";
@@ -30,11 +37,32 @@ import MyBoughtItems from "./pages/MyBoughtItems";
 import MySoldItems from "./pages/MySoldItems";
 
 const App: React.FC = () => {
-  const { address, isConnected } = useAccount();
-  const { connectAsync, connectors, isLoading: connectLoading } = useConnect();
-  const { disconnect } = useDisconnect();
+  const {
+    publicKey,
+    connected,
+    connecting,
+    wallets,
+    select,
+    connect,
+    disconnect,
+  } = useWallet();
   const navigate = useNavigate();
   const toast = useToast();
+  const [pendingWallet, setPendingWallet] = useState<WalletName<string> | null>(
+    null
+  );
+
+  const address = useMemo(() => publicKey?.toBase58(), [publicKey]);
+
+  const availableWallets = useMemo(
+    () =>
+      wallets.filter((wallet) =>
+        [WalletReadyState.Installed, WalletReadyState.Loadable].includes(
+          wallet.readyState
+        )
+      ),
+    [wallets]
+  );
 
   const handleLogout = () => {
     clearToken();
@@ -48,17 +76,25 @@ const App: React.FC = () => {
     { label: "Telemetry", action: () => navigate("/analytics") },
   ];
 
-  const handleWalletConnect = async (connector: (typeof connectors)[number]) => {
+  const handleWalletConnect = async (
+    walletName: WalletName<string>
+  ) => {
     try {
-      await connectAsync({ connector });
+      setPendingWallet(walletName);
+      await select(walletName);
+      await connect();
     } catch (error) {
-      if ((error as Error).name === "ConnectorNotFoundError") {
-        toast({
-          title: "Add a web 3 wallet from your browser's marketplace",
-          status: "error",
-        });
-      }
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to connect to wallet";
+      toast({
+        title: "Wallet connection failed",
+        description: message,
+        status: "error",
+      });
     }
+    setPendingWallet(null);
   };
 
   return (
@@ -112,7 +148,7 @@ const App: React.FC = () => {
           <Spacer />
 
           <Stack direction={{ base: "column", sm: "row" }} spacing={3} align="center">
-            {isConnected && address ? (
+            {connected && address ? (
               <HStack spacing={3}>
                 <Text fontSize="sm" color="whiteAlpha.700">
                   {formatAddress(address)}
@@ -122,19 +158,37 @@ const App: React.FC = () => {
                 </Button>
               </HStack>
             ) : (
-              connectors.map((connector) => (
+              availableWallets.length > 0 ? (
+                availableWallets.map(({ adapter }) => (
+                  <Button
+                    key={adapter.name}
+                    onClick={() => handleWalletConnect(adapter.name)}
+                    isLoading={
+                      (connecting || pendingWallet === adapter.name) &&
+                      pendingWallet === adapter.name
+                    }
+                    size="sm"
+                    variant="cta"
+                  >
+                    Connect {adapter.name}
+                  </Button>
+                ))
+              ) : (
                 <Button
-                  key={connector.id}
-                  onClick={() => handleWalletConnect(connector)}
-                  isLoading={
-                    connectLoading && connector.id === connectors?.[0]?.id
-                  }
                   size="sm"
                   variant="cta"
+                  onClick={() =>
+                    toast({
+                      title: "No Solana wallets detected",
+                      description:
+                        "Install Phantom, Backpack, Solflare, or another Solana wallet extension.",
+                      status: "info",
+                    })
+                  }
                 >
-                  Connect Wallet
+                  Install a Solana wallet
                 </Button>
-              ))
+              )
             )}
             <Button size="sm" variant="grey" onClick={handleLogout}>
               Logout

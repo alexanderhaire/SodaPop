@@ -7,9 +7,9 @@ const getString = (value?: string | null, fallback = "") =>
 
 export const PORT = Number(process.env.PORT) || 8080;
 export const OPENAI_API_KEY = getString(process.env.OPENAI_API_KEY);
-export const ALCHEMY_API_URL = getString(process.env.ALCHEMY_API_URL);
-export const PRIVATE_KEY = getString(
-  process.env.PRIVATE_KEY || process.env.DEPLOYER_PRIVATE_KEY,
+export const SOLANA_RPC_URL = getString(
+  process.env.SOLANA_RPC_URL,
+  "https://api.devnet.solana.com",
 );
 
 export const JWT_SECRET = getString(

@@ -8,10 +8,8 @@ import {
   Spinner,
   HStack,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import { useAccount, useWalletClient } from "wagmi";
-import { readContract } from "@wagmi/core";
-import { HORSE_TOKEN_ADDRESS, horseTokenABI } from "../utils/contractConfig";
+import { useEffect, useMemo, useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import {
   BarChart,
   Bar,
@@ -25,7 +23,8 @@ import {
   Legend,
 } from "recharts";
 import { motion } from "framer-motion";
-  
+import assetsData from "../mocks/assets.json";
+
   interface ItemStats {
     id: string;
     name: string;
@@ -34,10 +33,10 @@ import { motion } from "framer-motion";
     total_earned: number;
     progress_to_goal: number;
   }
-  
+
 const AnalyticsDashboard: React.FC = () => {
-  const { address } = useAccount();
-  const { data: walletClient } = useWalletClient();
+  const { publicKey } = useWallet();
+  const address = useMemo(() => publicKey?.toBase58(), [publicKey]);
   const [items, setItems] = useState<ItemStats[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -49,67 +48,57 @@ const AnalyticsDashboard: React.FC = () => {
   const COLORS = ["#60a5fa", "#34d399", "#f472b6", "#fcd34d", "#c084fc"];
 
   useEffect(() => {
-    const fetchAnalytics = async () => {
-      if (!address || !walletClient) return;
+    const populateFromMock = async () => {
+      if (!address) {
+        setItems([]);
+        setVariableAssets([]);
+        setChartData([]);
+        return;
+      }
       setLoading(true);
       setError("");
 
       try {
-        const url = `/api/earnings/${address}`;
-        const res = await fetch(url);
-        if (!res.ok) {
-          const text = await res.text();
-          console.error(`Unexpected response for ${url}:`, res.status, text);
-          throw new Error(`Invalid response ${res.status}`);
-        }
-        const ct = res.headers.get("content-type") || "";
-        let data: any;
-        if (ct.includes("application/json")) {
-          data = await res.json();
-        } else {
-          const text = await res.text();
-          throw new Error(`Expected JSON but received: ${text.slice(0, 100)}`);
-        }
-
-        const updated = await Promise.all(
-          data.map(async (item: any, idx: number) => {
-            if (!walletClient?.chain?.id) throw new Error("Missing chainId in walletClient");
-            const chainId = walletClient.chain.id;
-            const raw = await readContract(undefined as any, {
-              address: HORSE_TOKEN_ADDRESS,
-              abi: horseTokenABI,
-              functionName: "balanceOf",
-              args: [address, idx],
-              chainId,
-            });
-
+        const positions = (assetsData as any[])
+          .map((asset, idx) => {
+            const owned = asset.buyers[address] ?? 0;
+            if (!owned) return null;
+            const earnings = owned * asset.sharePrice * 4.2;
+            const progress = Math.min(
+              100,
+              Math.round((owned / asset.totalShares) * 100)
+            );
             return {
-              ...item,
-              my_share: Number(raw),
-            };
+              id: asset.id,
+              name: asset.name,
+              goal: asset.totalShares,
+              my_share: owned,
+              total_earned: Number(earnings.toFixed(3)),
+              progress_to_goal: progress,
+            } as ItemStats;
           })
-        );
+          .filter(Boolean) as ItemStats[];
 
-        setItems(updated);
-        setVariableAssets(updated);
+        setItems(positions);
+        setVariableAssets(positions);
         setChartData(
-          updated.map((i) => ({
-            name: i.name,
-            earnings: i.total_earned,
-            share: i.my_share,
-            goal: i.goal,
+          positions.map((position) => ({
+            name: position.name,
+            earnings: position.total_earned,
+            share: position.my_share,
+            goal: position.goal,
           }))
         );
       } catch (err) {
-        console.error("Failed to load earnings:", err);
-        setError("Failed to load earnings.");
+        console.error("Failed to assemble analytics:", err);
+        setError("Failed to assemble analytics.");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchAnalytics();
-  }, [address, walletClient]);
+    void populateFromMock();
+  }, [address]);
 
   return (
     <Box

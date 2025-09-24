@@ -1,11 +1,12 @@
 import { useState } from "react";
 import axios from "../utils/axiosConfig";
-import { useAccount } from "wagmi";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 const SodaBot = () => {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<{ from: string; text: string }[]>([]);
-  const { address } = useAccount();
+  const { publicKey } = useWallet();
+  const address = publicKey?.toBase58();
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -17,7 +18,7 @@ const SodaBot = () => {
     try {
       const res = await axios.post("/sodabot", {
         prompt: input,
-        userAddress: address?.toLowerCase(),
+        userAddress: address,
       });
       const botMessage = { from: "bot", text: res.data.reply };
       setMessages((prev) => [...prev, botMessage]);

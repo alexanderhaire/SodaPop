@@ -7,7 +7,7 @@ import {
   VStack,
   Badge,
 } from "@chakra-ui/react";
-import { useAccount } from "wagmi";
+import { useWallet } from "@solana/wallet-adapter-react";
 import assetsData from "../mocks/assets.json";
 import { motion } from "framer-motion";
 
@@ -18,22 +18,21 @@ interface Asset {
   owner: string;
   sharePrice: number;
   totalShares: number;
-  buyers: Record<string, number>;
+  buyers: Partial<Record<string, number>>;
 }
 
 const assets = assetsData as unknown as Asset[];
 const MotionBox = motion(Box);
 
 const SoldItems: React.FC = () => {
-  const { address } = useAccount();
+  const { publicKey } = useWallet();
+  const address = publicKey?.toBase58();
   const sold = React.useMemo(() => {
     if (!address) return [] as typeof assets;
     return assets.filter(
       (item) =>
-        item.owner.toLowerCase() === address.toLowerCase() &&
-        Object.keys(item.buyers).some(
-          (b) => b.toLowerCase() !== address.toLowerCase()
-        )
+        item.owner === address &&
+        Object.keys(item.buyers).some((b) => b !== address)
     );
   }, [address]);
 
@@ -54,7 +53,7 @@ const SoldItems: React.FC = () => {
       ) : (
         sold.map((item, idx) => {
           const soldShares = Object.entries(item.buyers).reduce((acc, [addr, num]) => {
-            if (addr.toLowerCase() === address?.toLowerCase()) return acc;
+            if (addr === address) return acc;
             return acc + (num as number);
           }, 0);
           const ownership = item.totalShares - soldShares;
