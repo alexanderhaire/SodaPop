@@ -20,6 +20,10 @@ import {
   ModalCloseButton,
   SimpleGrid,
   Text,
+  Heading,
+  Stack,
+  Divider,
+  VStack,
 } from "@chakra-ui/react";
 import { useState, useRef } from "react";
 import axios from "../utils/axiosConfig";
@@ -152,17 +156,35 @@ export default function CreateItemForm() {
   };
 
   return (
-    <Box maxW="700px" mx="auto" p={6}>
+    <Box
+      maxW="960px"
+      mx="auto"
+      p={{ base: 6, md: 10 }}
+      bg="rgba(9, 14, 30, 0.82)"
+      borderRadius="3xl"
+      border="1px solid rgba(148, 163, 255, 0.22)"
+      boxShadow="0 28px 70px rgba(4, 9, 24, 0.75)"
+    >
+      <Heading size="lg" mb={2}>
+        Launch Forge blueprint
+      </Heading>
+      <Text color="whiteAlpha.700" mb={8} fontSize="sm">
+        Define the parameters of your next legendary drop. Precision here powers
+        every on-chain move that follows.
+      </Text>
       <form onSubmit={handleSubmit}>
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
           <FormControl isInvalid={!!errors.itemType}>
             <FormLabel>Item Type</FormLabel>
             <Input
               name="itemType"
               value={form.itemType}
               onChange={handleChange}
+              variant="glass"
             />
-            <FormHelperText>e.g. Artwork, Horse</FormHelperText>
+            <FormHelperText color="whiteAlpha.600">
+              e.g. Thoroughbred, Champion Art, Breeding Rights
+            </FormHelperText>
             {errors.itemType && (
               <FormErrorMessage>{errors.itemType}</FormErrorMessage>
             )}
@@ -176,8 +198,11 @@ export default function CreateItemForm() {
               step="0.01"
               value={form.sharePrice}
               onChange={handleChange}
+              variant="glass"
             />
-            <FormHelperText>Price per share in ETH</FormHelperText>
+            <FormHelperText color="whiteAlpha.600">
+              Base price for each ownership shard
+            </FormHelperText>
             {errors.sharePrice && (
               <FormErrorMessage>{errors.sharePrice}</FormErrorMessage>
             )}
@@ -190,8 +215,11 @@ export default function CreateItemForm() {
               type="number"
               value={form.totalShares}
               onChange={handleChange}
+              variant="glass"
             />
-            <FormHelperText>Number of shares available</FormHelperText>
+            <FormHelperText color="whiteAlpha.600">
+              Total supply available for collectors
+            </FormHelperText>
             {errors.totalShares && (
               <FormErrorMessage>{errors.totalShares}</FormErrorMessage>
             )}
@@ -203,8 +231,12 @@ export default function CreateItemForm() {
               name="description"
               value={form.description}
               onChange={handleChange}
+              variant="glass"
+              rows={5}
             />
-            <FormHelperText>Brief description of the item</FormHelperText>
+            <FormHelperText color="whiteAlpha.600">
+              Craft the mythos and strategic positioning for this asset
+            </FormHelperText>
             {errors.description && (
               <FormErrorMessage>{errors.description}</FormErrorMessage>
             )}
@@ -216,18 +248,21 @@ export default function CreateItemForm() {
               name="shareType"
               value={form.shareType}
               onChange={handleChange}
+              variant="filled"
             >
               <option value="Fixed">Fixed</option>
               <option value="Variable">Variable</option>
             </Select>
-            <FormHelperText>Choose how shares behave</FormHelperText>
+            <FormHelperText color="whiteAlpha.600">
+              Configure whether your curve is static or reactive
+            </FormHelperText>
           </FormControl>
 
           <FormControl>
             <FormLabel>Image</FormLabel>
             <Box
               border="2px dashed"
-              borderColor={dragging ? "purple.400" : "gray.300"}
+              borderColor={dragging ? "cyan.300" : "rgba(148, 163, 255, 0.35)"}
               p={6}
               textAlign="center"
               onDrop={handleDrop}
@@ -235,11 +270,14 @@ export default function CreateItemForm() {
               onDragLeave={handleDragLeave}
               cursor="pointer"
               onClick={() => fileInputRef.current?.click()}
+              bg="rgba(8, 14, 32, 0.6)"
+              borderRadius="xl"
+              transition="border-color 0.2s ease"
             >
               {ipfsUrl ? (
-                <Image src={ipfsUrl} alt="preview" maxH="200px" mx="auto" />
+                <Image src={ipfsUrl} alt="preview" maxH="200px" mx="auto" borderRadius="lg" />
               ) : (
-                <Text>Drag & drop or click to upload</Text>
+                <Text color="whiteAlpha.600">Drag & drop or click to upload</Text>
               )}
               <Input
                 ref={fileInputRef}
@@ -249,21 +287,45 @@ export default function CreateItemForm() {
                 onChange={handleFileChange}
               />
             </Box>
-            <FormHelperText>Supported: images only</FormHelperText>
+            <FormHelperText color="whiteAlpha.600">
+              Supported formats: high-resolution imagery (PNG, JPG)
+            </FormHelperText>
           </FormControl>
         </SimpleGrid>
 
+        <Divider my={8} borderColor="rgba(148, 163, 255, 0.25)" />
         {ipfsUrl && (
-          <Box mt={4} p={4} borderWidth="1px" borderRadius="md">
-            <Text fontWeight="bold" mb={2}>
-              Preview
-            </Text>
-            <Image src={ipfsUrl} alt="Preview" maxH="150px" mb={2} mx="auto" />
-            <Text>Type: {form.itemType}</Text>
-            <Text>Share Price: {form.sharePrice} ETH</Text>
-            <Text>Total Shares: {form.totalShares}</Text>
-            <Text>Description: {form.description}</Text>
-            <Text>Share Type: {form.shareType}</Text>
+          <Box
+            mt={4}
+            p={6}
+            borderRadius="2xl"
+            bg="rgba(8, 14, 32, 0.85)"
+            border="1px solid rgba(114, 140, 255, 0.2)"
+            boxShadow="0 16px 45px rgba(4, 9, 24, 0.6)"
+          >
+            <Heading size="md" mb={4}>
+              Vision preview
+            </Heading>
+            <Stack direction={{ base: "column", md: "row" }} spacing={6} align="center">
+              <Image src={ipfsUrl} alt="Preview" maxH="180px" borderRadius="xl" />
+              <VStack align="stretch" spacing={2} color="whiteAlpha.700">
+                <Text>
+                  <strong>Type:</strong> {form.itemType}
+                </Text>
+                <Text>
+                  <strong>Share Price:</strong> {form.sharePrice} ETH
+                </Text>
+                <Text>
+                  <strong>Total Shares:</strong> {form.totalShares}
+                </Text>
+                <Text>
+                  <strong>Share Type:</strong> {form.shareType}
+                </Text>
+                <Text>
+                  <strong>Description:</strong> {form.description}
+                </Text>
+              </VStack>
+            </Stack>
           </Box>
         )}
 
@@ -271,16 +333,16 @@ export default function CreateItemForm() {
           type="submit"
           mt={4}
           isLoading={isSubmitting}
-          colorScheme="purple"
+          variant="cta"
         >
-          Create Item
+          Stage verification
         </Button>
       </form>
 
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Confirm Item Creation</ModalHeader>
+          <ModalHeader>Confirm launch blueprint</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Text mb={2}>Item Type: {form.itemType}</Text>
@@ -294,7 +356,7 @@ export default function CreateItemForm() {
               Edit
             </Button>
             <Button
-              colorScheme="purple"
+              variant="cta"
               onClick={() => {
                 setIsSubmitting(true);
                 createItem();
