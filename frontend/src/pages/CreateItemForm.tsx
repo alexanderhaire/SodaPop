@@ -38,8 +38,8 @@ export default function CreateItemForm() {
     shareType: "Fixed",
   });
 
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [ipfsUrl, setIpfsUrl] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,13 +74,19 @@ export default function CreateItemForm() {
   };
 
   const uploadFile = async (file: File) => {
-    setImageFile(file);
     try {
-      const imageUrl = await uploadImage(file);
-      setIpfsUrl(imageUrl);
+      const { ipfsUri, previewUrl } = await uploadImage(file);
+      setIpfsUrl(ipfsUri);
+      setImagePreviewUrl(previewUrl);
     } catch (err) {
       console.error("Image upload error:", err);
-      toast({ title: "Failed to upload image", status: "error" });
+      setIpfsUrl(null);
+      setImagePreviewUrl(null);
+      const description =
+        err instanceof Error
+          ? err.message
+          : "We couldn't upload your image. Please try again.";
+      toast({ title: "Failed to upload image", description, status: "error" });
     }
   };
 
@@ -272,8 +278,14 @@ export default function CreateItemForm() {
               borderRadius="xl"
               transition="border-color 0.2s ease"
             >
-              {ipfsUrl ? (
-                <Image src={ipfsUrl} alt="preview" maxH="200px" mx="auto" borderRadius="lg" />
+              {imagePreviewUrl ? (
+                <Image
+                  src={imagePreviewUrl}
+                  alt="preview"
+                  maxH="200px"
+                  mx="auto"
+                  borderRadius="lg"
+                />
               ) : (
                 <Text color="whiteAlpha.600">Drag & drop or click to upload</Text>
               )}
@@ -292,7 +304,7 @@ export default function CreateItemForm() {
         </SimpleGrid>
 
         <Divider my={8} borderColor="rgba(148, 163, 255, 0.25)" />
-        {ipfsUrl && (
+        {imagePreviewUrl && (
           <Box
             mt={4}
             p={6}
@@ -305,7 +317,7 @@ export default function CreateItemForm() {
               Vision preview
             </Heading>
             <Stack direction={{ base: "column", md: "row" }} spacing={6} align="center">
-              <Image src={ipfsUrl} alt="Preview" maxH="180px" borderRadius="xl" />
+              <Image src={imagePreviewUrl} alt="Preview" maxH="180px" borderRadius="xl" />
               <VStack align="stretch" spacing={2} color="whiteAlpha.700">
                 <Text>
                   <strong>Type:</strong> {form.itemType}
