@@ -174,7 +174,8 @@ Copy `.env.example` to `.env` and fill in:
 - **VITE_BACKEND_URL** — Base URL of the deployed backend (omit for same-origin deployments)
 - **VITE_SAMPLE_METADATA_URL** — Optional sample metadata used by the create flow
 - **VITE_NFT_STORAGE_KEY** — API key for NFT.Storage V2 uploads
-- **VITE_HORSE_FACTORY_ADDRESS** — Deployed HorseFactory address
+- **VITE_TOKEN_FACTORY_ADDRESS** — Address of the deployed token factory contract
+  (set `VITE_HORSE_FACTORY_ADDRESS` instead if you still use the legacy name)
 
 ### Auto captions with OpenAI Vision
 `POST /api/items/describe` accepts a base64 image and returns a generated title
