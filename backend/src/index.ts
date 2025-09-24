@@ -32,6 +32,10 @@ app.use(cors());
 app.use(express.json());
 
 // Health check
+app.get("/healthz", (_req: Request, res: Response) => {
+  res.status(200).send("ok");
+});
+
 app.get("/api/health", (_req: Request, res: Response) => {
   res.json({ status: "OK" });
 });
@@ -87,8 +91,11 @@ app.use("/api/leaderboard", leaderboardRoutes);
 // SodaBot chat endpoint (unprotected)
 app.use("/api/sodabot", sodabotRoutes);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Backend listening on http://localhost:${PORT}`);
+const port = PORT;
+const host = "0.0.0.0";
+
+app.listen(port, host, () => {
+  console.log(`🚀 Backend listening on port ${port}`);
 });
 
 // Start background cron jobs

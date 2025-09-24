@@ -32,6 +32,9 @@ const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
 // Health check
+app.get("/healthz", (_req, res) => {
+    res.status(200).send("ok");
+});
 app.get("/api/health", (_req, res) => {
     res.json({ status: "OK" });
 });
@@ -75,8 +78,10 @@ app.use("/api", marketData_1.default);
 app.use("/api/leaderboard", leaderboard_1.default);
 // SodaBot chat endpoint (unprotected)
 app.use("/api/sodabot", sodabot_1.default);
-app.listen(config_1.PORT, () => {
-    console.log(`🚀 Backend listening on http://localhost:${config_1.PORT}`);
+const port = config_1.PORT;
+const host = "0.0.0.0";
+app.listen(port, host, () => {
+    console.log(`🚀 Backend listening on port ${port}`);
 });
 // Start background cron jobs
 (0, eventMonitor_1.startEventMonitor)();

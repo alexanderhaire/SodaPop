@@ -5,7 +5,7 @@ dotenv.config();
 const getString = (value?: string | null, fallback = "") =>
   (value ?? "").trim() || fallback;
 
-export const PORT = Number(process.env.PORT) || 4000;
+export const PORT = Number(process.env.PORT) || 8080;
 export const OPENAI_API_KEY = getString(process.env.OPENAI_API_KEY);
 export const ALCHEMY_API_URL = getString(process.env.ALCHEMY_API_URL);
 export const PRIVATE_KEY = getString(
