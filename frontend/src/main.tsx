@@ -2,7 +2,6 @@
 
 import React, { PropsWithChildren, useEffect, useMemo, useRef } from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter } from "react-router-dom";
 import { ChakraProvider } from "@chakra-ui/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Buffer } from "buffer";
@@ -104,9 +103,7 @@ root.render(
     <SolanaProviders>
       <ChakraProvider theme={theme}>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
-            <App />
-          </BrowserRouter>
+          <App />
         </QueryClientProvider>
       </ChakraProvider>
     </SolanaProviders>
