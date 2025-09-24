@@ -2,24 +2,25 @@
 // src/controllers/portfolio.ts
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
-const ethers_1 = require("ethers");
-const config_1 = require("../utils/config");
+const web3_js_1 = require("@solana/web3.js");
+const blockchainService_1 = require("../services/blockchainService");
 const router = (0, express_1.Router)();
-const provider = new ethers_1.ethers.JsonRpcProvider(config_1.ALCHEMY_API_URL);
 router.get("/portfolio/:address", async (req, res) => {
     const { address } = req.params;
-    if (!address || !ethers_1.ethers.isAddress(address)) {
+    if (!address) {
         res.status(400).json({ error: "Invalid address." });
         return;
     }
     try {
-        const balance = await provider.getBalance(address);
-        const ethBalance = ethers_1.ethers.formatEther(balance);
-        res.json({ ethBalance });
+        const pubkey = new web3_js_1.PublicKey(address);
+        const connection = (0, blockchainService_1.getConnection)();
+        const lamports = await connection.getBalance(pubkey);
+        const solBalance = lamports / web3_js_1.LAMPORTS_PER_SOL;
+        res.json({ solBalance: solBalance.toFixed(4) });
     }
     catch (err) {
         console.error("Portfolio controller error:", err);
-        res.status(500).json({ error: "Failed to fetch balance" });
+        res.status(400).json({ error: "Invalid Solana address." });
     }
 });
 exports.default = router;

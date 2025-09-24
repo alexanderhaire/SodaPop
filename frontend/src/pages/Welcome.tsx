@@ -31,7 +31,7 @@ const trendingCoins = [
     name: "ASTRAL STEED",
     ticker: "$ASTRAL",
     change: 312,
-    liquidity: "42.8 ETH",
+    liquidity: "42.8 SOL",
     holders: "1,942",
     progress: 78,
   },
@@ -39,7 +39,7 @@ const trendingCoins = [
     name: "NOVA RUNNER",
     ticker: "$NOVA",
     change: 188,
-    liquidity: "26.1 ETH",
+    liquidity: "26.1 SOL",
     holders: "1,104",
     progress: 64,
   },
@@ -47,7 +47,7 @@ const trendingCoins = [
     name: "CELESTIAL ARC",
     ticker: "$ARC",
     change: 95,
-    liquidity: "18.4 ETH",
+    liquidity: "18.4 SOL",
     holders: "836",
     progress: 52,
   },
@@ -55,7 +55,7 @@ const trendingCoins = [
     name: "ORION PROTOCOL",
     ticker: "$ORION",
     change: 451,
-    liquidity: "61.7 ETH",
+    liquidity: "61.7 SOL",
     holders: "2,408",
     progress: 92,
   },
@@ -64,7 +64,7 @@ const trendingCoins = [
 const liveActivity = [
   {
     label: "Strategic capital infusion",
-    amount: "12.5 ETH",
+    amount: "12.5 SOL",
     token: "$ASTRAL",
     user: "Atlas Syndicate",
     ago: "2m",
@@ -419,7 +419,7 @@ const Welcome: React.FC = () => {
                 />
               </FormControl>
               <FormControl>
-                <FormLabel fontSize="sm">Seed liquidity (ETH)</FormLabel>
+                <FormLabel fontSize="sm">Seed liquidity (SOL)</FormLabel>
                 <Input
                   name="liquidity"
                   placeholder="5"

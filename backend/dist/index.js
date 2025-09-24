@@ -8,6 +8,8 @@ const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const mongoose_1 = __importDefault(require("mongoose"));
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 const auth_1 = __importDefault(require("./controllers/auth"));
 const portfolio_1 = __importDefault(require("./controllers/portfolio"));
 const chat_1 = __importDefault(require("./controllers/chat"));
@@ -29,8 +31,14 @@ if (config_1.MONGO_URI) {
         .catch((err) => console.error("Mongo connection error:", err));
 }
 const app = (0, express_1.default)();
+app.set("trust proxy", true);
 app.use((0, cors_1.default)());
 app.use(express_1.default.json());
+const uploadsDir = path_1.default.resolve(process.cwd(), "uploads");
+if (!fs_1.default.existsSync(uploadsDir)) {
+    fs_1.default.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use("/uploads", express_1.default.static(uploadsDir));
 // Health check
 app.get("/healthz", (_req, res) => {
     res.status(200).send("ok");

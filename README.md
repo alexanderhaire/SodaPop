@@ -31,7 +31,7 @@ These assets allow for ongoing ownership via shares that can be resold or transf
 - Music royalties
 
 **Smart Contract Logic**:
-- Tokenized fractional ownership (e.g., ERC-1155 or ERC-20)
+- Tokenized fractional ownership via SPL token mints
 - Shares persist post-sale and can be traded in secondary markets
 - Metadata remains tied to ownership
 
@@ -45,7 +45,7 @@ These assets are consumed, delivered, or redeemed upon purchase and cannot be re
 - Limited-use licenses
 
 **Smart Contract Logic**:
-- Claimable/burnable assets (e.g., ERC-721 or ephemeral contract)
+- Claimable/burnable assets (e.g., limited-use SPL tokens or custom programs)
 - Once used, the token is burned or deactivated
 - Prevents secondary resale to maintain finality
 
@@ -99,8 +99,8 @@ These assets are consumed, delivered, or redeemed upon purchase and cannot be re
 │   ├── .env                 ← Actual secrets (never commit)
 │   └── .env.example         ← Template for environment variables
 │
-├── contracts/              ← Solidity contracts
-├── migrations/             ← Truffle migration scripts
+├── contracts/              ← Legacy Solidity contracts (unused with Solana)
+├── migrations/             ← Legacy Truffle migration scripts
 ├── shared/                  ← Shared TypeScript types or utilities
 │   └── types/
 │       └── index.ts
@@ -114,8 +114,8 @@ These assets are consumed, delivered, or redeemed upon purchase and cannot be re
 ### Prerequisites
 - **Node.js & npm** (v16+ recommended)
 - **Git** (to clone and version-control the project)
-- **MetaMask** (or another EIP-1193 wallet) installed in your browser
-- (Optional) An RPC provider account (e.g. Infura, Alchemy) to connect to Ethereum or other EVM chains
+- **Phantom**, **Backpack**, or another Solana wallet extension installed in your browser
+- (Optional) A Solana RPC provider URL if you want to target something other than the public devnet
 
 ### Clone & Install
 
@@ -138,25 +138,22 @@ These assets are consumed, delivered, or redeemed upon purchase and cannot be re
    - Frontend runs at **http://localhost:5173**
    - Backend listens on **http://localhost:4000**
    The script boots both services concurrently using `npm run dev` in each workspace.
-5. Compile and deploy the smart contracts (example uses Goerli):
-   ```bash
-   npx hardhat compile
-   npx hardhat run scripts/deploy.ts --network goerli
-   ```
-   Swap `goerli` for the EVM network you are targeting.
+5. Configure Solana RPC endpoints as needed:
+   - Update `VITE_SOLANA_RPC_URL` in `frontend/.env` to point to your cluster (defaults to devnet).
+   - Set `SOLANA_RPC_URL` in `backend/.env` if you want the API to use a custom RPC provider.
 
 ### Testing
 
 - **Frontend**: `cd frontend && npm test`
 - **Backend**: `cd backend && npm test`
-- **Contracts**: `npx hardhat test`
+- **Solana programs**: managed externally; SPL token interactions are performed at runtime via the wallet adapter
 
 Run these commands after installing dependencies to ensure your changes are stable before opening a pull request.
 
 ## Tech Stack
 - **Frontend:** React, TypeScript, Chakra UI
 - **Backend:** Node.js, TypeScript, Express, MongoDB
-- **Smart Contracts:** Solidity, Hardhat, Ethers.js
+- **On-chain Integration:** Solana Web3.js, SPL Token toolkit
 - **Storage:** IPFS/Pinata for asset metadata and images
 - **AI:** OpenAI GPT-4o vision is used to auto-generate titles and descriptions
   for uploaded images when these fields are left blank during item creation
@@ -165,8 +162,7 @@ Run these commands after installing dependencies to ensure your changes are stab
 Copy `.env.example` to `.env` and fill in:
 - **PORT** — Backend port (default `4000`)
 - **OPENAI_API_KEY** — OpenAI key for the chatbot and image captioning
-- **ALCHEMY_API_URL** — RPC endpoint for contract calls
-- **PRIVATE_KEY** or **DEPLOYER_PRIVATE_KEY** — Wallet used for contract writes
+- **SOLANA_RPC_URL** — RPC endpoint for Solana reads/writes (defaults to devnet)
 - **JWT_SECRET** — Secret used to sign JWTs
 - **JWT_EXPIRES_IN** — Token lifetime (e.g. `1d`)
 - **MONGO_URI** — MongoDB connection string
@@ -174,8 +170,7 @@ Copy `.env.example` to `.env` and fill in:
 - **VITE_BACKEND_URL** — Base URL of the deployed backend (omit for same-origin deployments)
 - **VITE_SAMPLE_METADATA_URL** — Optional sample metadata used by the create flow
 - **VITE_NFT_STORAGE_KEY** — API key for NFT.Storage V2 uploads
-- **VITE_TOKEN_FACTORY_ADDRESS** — Address of the deployed token factory contract
-  (set `VITE_HORSE_FACTORY_ADDRESS` instead if you still use the legacy name)
+- **VITE_SOLANA_RPC_URL** — Frontend RPC endpoint override (defaults to devnet)
 
 ### Auto captions with OpenAI Vision
 `POST /api/items/describe` accepts a base64 image and returns a generated title
@@ -198,12 +193,9 @@ leaves those fields blank.
    ```
    - Run with PM2, Docker, or serverless.
 
-3. **Contracts**
-   ```bash
-   npx hardhat compile
-   npx hardhat run scripts/deploy.ts --network goerli
-   ```
-   - Change `goerli` to your desired network.
+3. **Solana**
+   - Use the Solana CLI or Anchor to deploy custom programs if your use-case requires them.
+   - SPL token mints can be created directly from the frontend using the provided launcher.
 
 ## Auto Improvement
 This repository includes an experimental script that calls OpenAI to suggest refinements to any JavaScript or TypeScript file. Provide a file path and the script will overwrite it with the model's response.
