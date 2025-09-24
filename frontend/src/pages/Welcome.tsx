@@ -128,6 +128,29 @@ const Welcome: React.FC = () => {
 
   return (
     <VStack spacing={14} align="stretch" pb={10}>
+      <Box
+        position="relative"
+        overflow="hidden"
+        borderRadius="3xl"
+        border="1px solid rgba(114, 140, 255, 0.25)"
+        boxShadow="0 28px 65px rgba(8, 15, 32, 0.55)"
+        maxH={{ base: "360px", md: "420px" }}
+        width="100%"
+      >
+        <Box
+          as="video"
+          src="/videos/launch-loop.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          display="block"
+          objectFit="cover"
+          width="100%"
+          height="100%"
+          aria-label="SodaPop hero preview"
+        />
+      </Box>
       <Flex
         direction={{ base: "column", xl: "row" }}
         gap={{ base: 10, xl: 16 }}
