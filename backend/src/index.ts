@@ -3,6 +3,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import fs from "fs";
+import path from "path";
 
 import authRoutes from "./controllers/auth";
 import portfolioRoutes from "./controllers/portfolio";
@@ -28,8 +30,15 @@ if (MONGO_URI) {
 }
 
 const app = express();
+app.set("trust proxy", true);
 app.use(cors());
 app.use(express.json());
+
+const uploadsDir = path.resolve(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use("/uploads", express.static(uploadsDir));
 
 // Health check
 app.get("/healthz", (_req: Request, res: Response) => {
