@@ -18,6 +18,11 @@ import marketDataRoutes from "./routes/marketData";
 import uploadRoutes from "./routes/upload";
 import { PORT, JWT_SECRET, MONGO_URI } from "./utils/config";
 import { startEventMonitor } from "./jobs/eventMonitor";
+import {
+  getPortfolio as getTokenPortfolio,
+  getSpotlight,
+  recordLaunchedToken,
+} from "./routes/tokens";
 
 dotenv.config();
 
@@ -79,6 +84,10 @@ app.get("/api/health", (_req: Request, res: Response) => {
 app.get("/api/hello", (_req: Request, res: Response) => {
   res.json({ message: "Hello from SodaPop backend!" });
 });
+
+app.post("/api/tokens/record", recordLaunchedToken);
+app.get("/api/spotlight", getSpotlight);
+app.get("/api/portfolio", getTokenPortfolio);
 
 function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
