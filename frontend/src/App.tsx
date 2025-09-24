@@ -42,10 +42,10 @@ const App: React.FC = () => {
   };
 
   const navigation = [
-    { label: "Trending", action: () => navigate("/items") },
-    { label: "Launch", action: () => navigate("/create") },
-    { label: "My Portfolio", action: () => navigate("/my-items") },
-    { label: "Analytics", action: () => navigate("/analytics") },
+    { label: "Spotlight", action: () => navigate("/items") },
+    { label: "Launch Forge", action: () => navigate("/create") },
+    { label: "Portfolio", action: () => navigate("/my-items") },
+    { label: "Telemetry", action: () => navigate("/analytics") },
   ];
 
   const handleWalletConnect = async (connector: (typeof connectors)[number]) => {
@@ -87,7 +87,7 @@ const App: React.FC = () => {
               LIVE
             </Badge>
             <Heading size={{ base: "sm", md: "md" }} fontWeight="extrabold">
-              SodaPop Launchpad
+              SodaPop Ascension Hub
             </Heading>
           </HStack>
 

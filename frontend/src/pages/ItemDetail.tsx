@@ -338,8 +338,16 @@ const ItemDetail: React.FC = () => {
   }, [calcShares, maxSupply]);
 
   return (
-    <Box p={6} maxW="700px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
-      <Heading mb={4} color="purple.600">
+    <Box
+      p={{ base: 6, md: 10 }}
+      maxW="960px"
+      mx="auto"
+      bg="rgba(9, 14, 30, 0.82)"
+      borderRadius="3xl"
+      border="1px solid rgba(148, 163, 255, 0.22)"
+      boxShadow="0 28px 70px rgba(4, 9, 24, 0.75)"
+    >
+      <Heading mb={4}>
         {item.name}
       </Heading>
       <Box h="250px" mb={4}>
@@ -354,27 +362,43 @@ const ItemDetail: React.FC = () => {
       </Box>
       <Divider mb={4} />
 
-      <VStack spacing={3} align="start">
-        <Text><strong>Age:</strong> {item.age}</Text>
-        <Text><strong>Trainer:</strong> {item.trainer}</Text>
-        <Text><strong>Record:</strong> {item.record}</Text>
-        <Text><strong>Earnings:</strong> {item.earnings}</Text>
+      <VStack spacing={3} align="start" color="whiteAlpha.800">
+        <Text>
+          <strong>Age:</strong> {item.age}
+        </Text>
+        <Text>
+          <strong>Trainer:</strong> {item.trainer}
+        </Text>
+        <Text>
+          <strong>Record:</strong> {item.record}
+        </Text>
+        <Text>
+          <strong>Earnings:</strong> {item.earnings}
+        </Text>
 
         {sharePrice !== null && (
-          <Text><strong>Share Price:</strong> {sharePrice} wei</Text>
+          <Text>
+            <strong>Share Price:</strong> {sharePrice} wei
+          </Text>
         )}
         {offeringShares !== null && (
-          <Text><strong>Total Shares:</strong> {offeringShares}</Text>
+          <Text>
+            <strong>Total Shares:</strong> {offeringShares}
+          </Text>
         )}
         {maxSupply !== null && mintedSoFar !== null && (
           <Box>
-            <Text><strong>Minted:</strong> {mintedSoFar} / {maxSupply}</Text>
-            <Text><strong>Remaining:</strong> {remainingSupply}</Text>
+            <Text>
+              <strong>Minted:</strong> {mintedSoFar} / {maxSupply}
+            </Text>
+            <Text>
+              <strong>Remaining:</strong> {remainingSupply}
+            </Text>
           </Box>
         )}
         {sharesOwned !== null && (
-          <Text color="gray.600">
-            You own {sharesOwned} share{sharesOwned !== 1 && "s"} of this item.
+          <Text color="whiteAlpha.700">
+            You command {sharesOwned} share{sharesOwned !== 1 && "s"} of this asset.
           </Text>
         )}
       </VStack>
@@ -390,10 +414,10 @@ const ItemDetail: React.FC = () => {
 
       <HStack mt={4} spacing={4}>
         <Button variant="cta" onClick={handleBuyShare} isLoading={isPreparing || isMinting}>
-          Buy Share for 0.00001 ETH
+          Acquire share for 0.00001 ETH
         </Button>
         <Tooltip
-          label="No shares remaining"
+          label="Allocation complete"
           isDisabled={remainingSupply !== null && remainingSupply > 0}
         >
           <Button
@@ -437,8 +461,8 @@ const ItemDetail: React.FC = () => {
                   You would earn {projectedReturn} ETH ({ownershipPercent.toFixed(2)}% ownership)
                 </Text>
               )}
-              <Text fontSize="sm" color="gray.500">
-                This is an estimate. Actual earnings may vary.
+              <Text fontSize="sm" color="whiteAlpha.600">
+                This projection is indicative. Chain activity may shift returns.
               </Text>
             </VStack>
           </AccordionPanel>
@@ -448,7 +472,7 @@ const ItemDetail: React.FC = () => {
       {horseProfile && (
         <Box mt={6} w="100%">
           <Divider mb={4} />
-          <Heading size="md" mb={2} color="purple.500">
+          <Heading size="md" mb={2}>
             Ownership & Compliance
           </Heading>
           <VStack align="start" spacing={2} fontSize="sm">
@@ -478,13 +502,13 @@ const ItemDetail: React.FC = () => {
             {horseProfile.legalContractUri && (
               <Text>
                 <strong>Legal Contract:</strong>{" "}
-                <Link href={horseProfile.legalContractUri} color="purple.600" isExternal>
+                <Link href={horseProfile.legalContractUri} color="cyan.300" isExternal>
                   View signed agreement
                 </Link>
               </Text>
             )}
             {ownershipVerified !== null && (
-              <Text color={ownershipVerified ? "green.500" : "red.500"} fontWeight="semibold">
+              <Text color={ownershipVerified ? "green.300" : "red.400"} fontWeight="semibold">
                 {ownershipVerified
                   ? "Ownership verified on-chain via legal contract reference."
                   : "Ownership verification pending or legal reference mismatch."}

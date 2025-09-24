@@ -7,8 +7,10 @@ import {
   Image,
   Text,
   Button,
+  Badge,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 interface Item {
   name: string;
@@ -35,38 +37,60 @@ const items: Item[] = [
   },
 ];
 
+const MotionHStack = motion(HStack);
+
 const MyBoughtItems: React.FC = () => {
   const navigate = useNavigate();
   return (
-    <Box p={6} maxW="800px" mx="auto" bg="whiteAlpha.800" borderRadius="lg" boxShadow="lg">
-      <Heading size="lg" color="purple.600" mb={4}>
-        My Bought Items
+    <Box
+      p={8}
+      maxW="900px"
+      mx="auto"
+      bg="rgba(9, 14, 30, 0.82)"
+      borderRadius="3xl"
+      border="1px solid rgba(148, 163, 255, 0.22)"
+      boxShadow="0 28px 70px rgba(4, 9, 24, 0.75)"
+    >
+      <Heading size="lg" mb={2}>
+        My curated acquisitions
       </Heading>
+      <Text color="whiteAlpha.700" mb={6} fontSize="sm">
+        A personal archive of the champions you have selectively backed across
+        the exchange.
+      </Text>
       <VStack spacing={6} align="stretch">
         {items.map((item, idx) => (
-          <HStack
+          <MotionHStack
             key={idx}
-            p={4}
-            borderWidth={1}
-            borderRadius="lg"
+            p={5}
+            borderRadius="2xl"
             justify="space-between"
             align="center"
-            bg={idx % 2 === 0 ? "#fff" : "#f8f8f8"}
-            boxShadow="md"
+            bg="rgba(12, 18, 38, 0.9)"
+            border="1px solid rgba(114, 140, 255, 0.18)"
+            boxShadow="0 20px 55px rgba(4, 9, 26, 0.65)"
+            spacing={6}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: idx * 0.05 }}
+            whileHover={{ borderColor: "rgba(165, 196, 255, 0.4)", y: -4 }}
           >
             <HStack spacing={4} align="center">
-              <Image src={item.image} alt={item.name} boxSize="100px" borderRadius="md" />
+              <Image src={item.image} alt={item.name} boxSize="96px" borderRadius="xl" />
               <Box>
                 <Heading size="md">{item.name}</Heading>
-                <Text color="gray.500">
-                  {item.starts} starts – {item.wins} wins – {item.places} places
+                <Text color="whiteAlpha.700" fontSize="sm">
+                  {item.starts} starts • {item.wins} wins • {item.places} podiums
                 </Text>
+                <Badge colorScheme="cyan" mt={2} borderRadius="full">
+                  Collector's pick
+                </Badge>
               </Box>
             </HStack>
-            <Button colorScheme="teal" onClick={() => navigate("/items/" + idx)}>
-              Details
+            <Button variant="cta" size="sm" onClick={() => navigate("/items/" + idx)}>
+              View dossier
             </Button>
-          </HStack>
+          </MotionHStack>
         ))}
       </VStack>
     </Box>

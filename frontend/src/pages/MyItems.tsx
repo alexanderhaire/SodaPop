@@ -1,41 +1,63 @@
 import React from "react";
-import { Box, Image, Heading, Text, Button, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Image,
+  Heading,
+  Text,
+  Button,
+  VStack,
+  HStack,
+  Badge,
+} from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import items from "../mocks/items.json";
+import { motion } from "framer-motion";
+
+const MotionBox = motion(Box);
 
 const MyItems: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <VStack spacing={4} align="stretch">
+    <VStack spacing={5} align="stretch">
       {items.map((item, idx) => (
-        <Box
+        <MotionBox
           key={idx}
-          p={4}
-          borderWidth={1}
-          borderRadius="lg"
-          boxShadow="md"
+          p={5}
+          borderRadius="2xl"
           display="flex"
           alignItems="center"
           justifyContent="space-between"
-          bg={idx % 2 === 0 ? "#fff" : "#f8f8f8"}
+          bg="rgba(9, 14, 30, 0.78)"
+          border="1px solid rgba(114, 140, 255, 0.2)"
+          boxShadow="0 20px 55px rgba(4, 9, 26, 0.65)"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: idx * 0.04 }}
+          whileHover={{ borderColor: "rgba(165, 196, 255, 0.4)", y: -4 }}
         >
-          <Box display="flex" alignItems="center" gap={4}>
+          <HStack spacing={4} align="center">
             <Image
               src={item.image}
               alt={item.name}
-              boxSize="80px"
-              borderRadius="md"
+              boxSize="88px"
+              borderRadius="xl"
+              objectFit="cover"
             />
             <Box>
               <Heading size="md">{item.name}</Heading>
-              <Text color="gray.500">{item.record}</Text>
+              <Text color="whiteAlpha.700" fontSize="sm">
+                {item.record}
+              </Text>
+              <Badge colorScheme="cyan" mt={2} borderRadius="full">
+                Owned asset
+              </Badge>
             </Box>
-          </Box>
-          <Button colorScheme="teal" onClick={() => navigate(`/items/${item.id}`)}>
-            Details
+          </HStack>
+          <Button variant="cta" size="sm" onClick={() => navigate(`/items/${item.id}`)}>
+            View performance
           </Button>
-        </Box>
+        </MotionBox>
       ))}
     </VStack>
   );
