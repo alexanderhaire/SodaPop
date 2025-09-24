@@ -1,6 +1,7 @@
-import axios from "./axiosConfig";
+import axiosInstance from "./axiosConfig";
 import { getToken } from "./authToken";
 import { uploadToNftStorageV2 } from "./nftStorage";
+import { isAxiosError } from "axios";
 
 const NFT_STORAGE_GATEWAY = "https://nftstorage.link/ipfs/";
 
@@ -26,6 +27,12 @@ export const uploadImage = async (file: File): Promise<UploadImageResult> => {
     throw new Error("A valid file must be provided for upload.");
   }
 
+  console.info("[uploadImage] Initiating upload", {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+  });
+
   try {
     const cid = await uploadToNftStorageV2(file);
     const trimmedCid = cid.trim();
@@ -33,12 +40,22 @@ export const uploadImage = async (file: File): Promise<UploadImageResult> => {
       throw new Error("NFT.Storage returned an empty CID.");
     }
 
+    console.info("[uploadImage] NFT.Storage upload succeeded", {
+      name: file.name,
+      cid: trimmedCid,
+    });
+
     return {
       ipfsUri: `ipfs://${trimmedCid}`,
       previewUrl: `${NFT_STORAGE_GATEWAY}${trimmedCid}`,
     };
   } catch (primaryError) {
-    console.warn("NFT.Storage upload failed, falling back to legacy uploader.", primaryError);
+    const fallbackReason =
+      primaryError instanceof Error ? primaryError.message : String(primaryError);
+    console.warn("[uploadImage] NFT.Storage upload failed; falling back to legacy uploader", {
+      name: file.name,
+      reason: fallbackReason,
+    });
 
     const formData = new FormData();
     formData.append("file", file);
@@ -50,7 +67,7 @@ export const uploadImage = async (file: File): Promise<UploadImageResult> => {
     }
 
     try {
-      const response = await axios.post("upload", formData, { headers });
+      const response = await axiosInstance.post("upload", formData, { headers });
       const data = response.data ?? {};
       const candidateUrl =
         typeof data === "string"
@@ -62,18 +79,46 @@ export const uploadImage = async (file: File): Promise<UploadImageResult> => {
       }
 
       const finalUrl = candidateUrl.trim();
+      console.info("[uploadImage] Legacy uploader succeeded", {
+        name: file.name,
+        url: finalUrl,
+      });
       return {
         ipfsUri: finalUrl,
         previewUrl: finalUrl,
       };
     } catch (fallbackError) {
-      const reason =
+      let detailedMessage =
         fallbackError instanceof Error
           ? fallbackError.message
           : typeof fallbackError === "string"
             ? fallbackError
             : "Unknown error";
-      throw new Error(`Image upload failed: ${reason}`);
+
+      if (isAxiosError(fallbackError)) {
+        const status = fallbackError.response?.status;
+        const statusText = fallbackError.response?.statusText;
+        const responseData = fallbackError.response?.data;
+        detailedMessage = status
+          ? `Request failed with status ${status}${statusText ? ` ${statusText}` : ""}`
+          : detailedMessage;
+
+        console.error("[uploadImage] Legacy uploader request failed", {
+          name: file.name,
+          status,
+          statusText,
+          responseData,
+          message: fallbackError.message,
+          stack: fallbackError.stack,
+        });
+      } else {
+        console.error("[uploadImage] Legacy uploader threw non-Axios error", {
+          name: file.name,
+          error: fallbackError,
+        });
+      }
+
+      throw new Error(`Image upload failed: ${detailedMessage}`);
     }
   }
 };
