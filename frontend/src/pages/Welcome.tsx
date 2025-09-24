@@ -166,7 +166,7 @@ const Welcome: React.FC = () => {
             textTransform="none"
             mb={4}
           >
-            The internet's launchpad for memecoins
+            The internet's liquidity hub for champion horses
           </Badge>
           <Heading
             size="2xl"
@@ -174,7 +174,7 @@ const Welcome: React.FC = () => {
             lineHeight={1.05}
             letterSpacing="tight"
           >
-            Launch the next viral coin in seconds.
+            Win the next Derby by fueling your stable's liquidity.
           </Heading>
           <Text mt={6} color="whiteAlpha.700" maxW="540px" fontSize="lg">
             Spin up a bonding curve, seed liquidity and let the community ape in.
