@@ -1,6 +1,6 @@
 // File: frontend/src/pages/ItemList.tsx
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Heading,
@@ -14,11 +14,57 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import items from "../mocks/items.json";
 import { motion } from "framer-motion";
+import {
+  SpotlightItem,
+  getStoredSpotlightItems,
+  subscribeToSpotlightUpdates,
+} from "../utils/spotlightItems";
 
 const MotionBox = motion(Box);
 const MotionHStack = motion(HStack);
+type SpotlightListItem = SpotlightItem & {
+  record: string;
+};
+
 const ItemList: React.FC = () => {
   const navigate = useNavigate();
+  const [launchedItems, setLaunchedItems] = useState<SpotlightItem[]>([]);
+
+  useEffect(() => {
+    const syncRoster = () => {
+      setLaunchedItems(getStoredSpotlightItems());
+    };
+
+    syncRoster();
+    const unsubscribe = subscribeToSpotlightUpdates(syncRoster);
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const roster = useMemo<SpotlightListItem[]>(() => {
+    const legacyItems: SpotlightListItem[] = (items as SpotlightListItem[]).map(
+      (item) => ({
+        ...item,
+        image: item.image ?? `/images/${item.id}.png`,
+      })
+    );
+
+    return [...launchedItems, ...legacyItems];
+  }, [launchedItems]);
+
+  const handleLaunchNavigation = (item: SpotlightListItem) => {
+    if (item.mintAddress) {
+      const explorerUrl = `https://explorer.solana.com/address/${item.mintAddress}?cluster=devnet`;
+      if (typeof window !== "undefined") {
+        window.open(explorerUrl, "_blank", "noopener,noreferrer");
+      }
+      return;
+    }
+
+    navigate(`/items/${item.id}`);
+  };
 
   return (
     <MotionBox
@@ -56,7 +102,7 @@ const ItemList: React.FC = () => {
         </Button>
       </HStack>
       <VStack spacing={5} align="stretch">
-        {items.map((item, idx) => (
+        {roster.map((item, idx) => (
           <MotionHStack
             key={item.id}
             p={5}
@@ -73,13 +119,29 @@ const ItemList: React.FC = () => {
             whileHover={{ borderColor: "rgba(165, 196, 255, 0.4)", y: -4 }}
           >
             <HStack spacing={5} align="center">
-              <Image
-                src={`/images/${item.id}.png`}
-                alt={item.name}
-                boxSize="96px"
-                borderRadius="xl"
-                objectFit="cover"
-              />
+              {item.image ? (
+                <Image
+                  src={item.image}
+                  alt={item.name}
+                  boxSize="96px"
+                  borderRadius="xl"
+                  objectFit="cover"
+                />
+              ) : (
+                <Box
+                  boxSize="96px"
+                  borderRadius="xl"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  fontSize="3xl"
+                  fontWeight="bold"
+                  bgGradient="linear(to-br, rgba(80, 134, 255, 0.3), rgba(155, 100, 255, 0.3))"
+                  border="1px solid rgba(114, 140, 255, 0.32)"
+                >
+                  {item.name.charAt(0).toUpperCase()}
+                </Box>
+              )}
               <Box>
                 <Heading size="md">{item.name}</Heading>
                 <Text color="whiteAlpha.700" fontSize="sm">
@@ -87,8 +149,12 @@ const ItemList: React.FC = () => {
                 </Text>
               </Box>
             </HStack>
-            <Button variant="cta" size="sm" onClick={() => navigate(`/items/${item.id}`)}>
-              Enter details
+            <Button
+              variant="cta"
+              size="sm"
+              onClick={() => handleLaunchNavigation(item)}
+            >
+              {item.mintAddress ? "View on Explorer" : "Enter details"}
             </Button>
           </MotionHStack>
         ))}

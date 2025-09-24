@@ -39,6 +39,7 @@ import {
   getAssociatedTokenAddressSync,
   getMinimumBalanceForRentExemptMint,
 } from "@solana/spl-token";
+import { addSpotlightItem } from "../utils/spotlightItems";
 
 const DEFAULT_DECIMALS = 9;
 
@@ -81,6 +82,25 @@ const parseTokenSupply = (raw: string, decimals: number): bigint => {
   const fractionUnits = paddedFraction ? BigInt(paddedFraction) : 0n;
 
   return wholeUnits + fractionUnits;
+};
+
+const formatDisplaySupply = (raw: string): string => {
+  const cleaned = raw.replace(/,/g, "").trim();
+  if (!cleaned) {
+    return "0";
+  }
+
+  const [wholePart, fractionPart = ""] = cleaned.split(".");
+
+  const normalizedWhole = /[^0-9]/.test(wholePart)
+    ? wholePart
+    : (wholePart ? BigInt(wholePart) : 0n).toLocaleString();
+
+  const trimmedFraction = fractionPart
+    .slice(0, DEFAULT_DECIMALS)
+    .replace(/0+$/, "");
+
+  return trimmedFraction ? `${normalizedWhole}.${trimmedFraction}` : normalizedWhole;
 };
 
 const CreateItemForm = () => {
@@ -248,15 +268,28 @@ const CreateItemForm = () => {
         "confirmed"
       );
 
+      const displaySupply = formatDisplaySupply(initialSupply);
+
       setState({
         signature,
         mintAddress: mintKeypair.publicKey.toBase58(),
         tokenAccount: associatedTokenAccount.toBase58(),
       });
 
+      addSpotlightItem({
+        name: trimmedName,
+        symbol: trimmedSymbol,
+        record: `Freshly minted • Supply ${displaySupply} ${trimmedSymbol}`,
+        image: photo?.preview ?? undefined,
+        mintAddress: mintKeypair.publicKey.toBase58(),
+        tokenAccount: associatedTokenAccount.toBase58(),
+        signature,
+        initialSupply: displaySupply,
+      });
+
       toast({
         title: `${trimmedSymbol} token minted`,
-        description: `${trimmedName} successfully launched on Solana.`,
+        description: `${trimmedName} successfully launched on Solana. The Spotlight roster has been refreshed.`,
         status: "success",
       });
     } catch (err) {
