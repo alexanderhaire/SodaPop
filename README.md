@@ -2,6 +2,20 @@
 
 **Grey MarketPlace** is a decentralized marketplace for creating, buying, and selling both **variable** and **fixed** assets — combining Web3-powered investment infrastructure with on-chain commerce fulfillment.
 
+## Table of Contents
+
+1. [What is Grey MarketPlace?](#-what-is-grey-marketplace)
+2. [Key Features](#key-features)
+3. [How It Works](#how-it-works)
+4. [Folder Structure](#folder-structure)
+5. [Getting Started](#getting-started)
+6. [Tech Stack](#tech-stack)
+7. [Environment Variables](#environment-variables)
+8. [Deployment](#deployment)
+9. [Auto Improvement](#auto-improvement)
+10. [Contributing](#contributing)
+11. [License](#license)
+
 ## 🧠 What is Grey MarketPlace?
 
 Grey MarketPlace manages two distinct asset classes:
@@ -110,10 +124,12 @@ These assets are consumed, delivered, or redeemed upon purchase and cannot be re
    git clone https://github.com/your-username/GreyMarketPlace.git
    cd GreyMarketPlace
    ```
+   Replace `your-username` with the GitHub account that hosts this repository.
 2. Install dependencies for both apps:
    ```bash
    ./setup.sh
    ```
+   This convenience script installs all Node dependencies in the `frontend`, `backend`, and `shared` workspaces.
 3. Copy `.env.example` to `.env` and fill in your secrets.
 4. Start the development servers:
    ```bash
@@ -121,11 +137,21 @@ These assets are consumed, delivered, or redeemed upon purchase and cannot be re
    ```
    - Frontend runs at **http://localhost:5173**
    - Backend listens on **http://localhost:4000**
+   The script boots both services concurrently using `npm run dev` in each workspace.
 5. Compile and deploy the smart contracts (example uses Goerli):
    ```bash
    npx hardhat compile
    npx hardhat run scripts/deploy.ts --network goerli
    ```
+   Swap `goerli` for the EVM network you are targeting.
+
+### Testing
+
+- **Frontend**: `cd frontend && npm test`
+- **Backend**: `cd backend && npm test`
+- **Contracts**: `npx hardhat test`
+
+Run these commands after installing dependencies to ensure your changes are stable before opening a pull request.
 
 ## Tech Stack
 - **Frontend:** React, TypeScript, Chakra UI
