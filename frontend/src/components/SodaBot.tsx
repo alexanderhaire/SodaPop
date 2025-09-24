@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import axios from "../utils/axiosConfig";
 import { useAccount } from "wagmi";
 
 const SodaBot = () => {
@@ -15,7 +15,7 @@ const SodaBot = () => {
     setInput("");
 
     try {
-      const res = await axios.post("/api/sodabot", {
+      const res = await axios.post("/sodabot", {
         prompt: input,
         userAddress: address?.toLowerCase(),
       });

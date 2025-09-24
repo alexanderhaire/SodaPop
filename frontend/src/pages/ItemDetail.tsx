@@ -31,7 +31,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { ethers } from "ethers";
-import axios from "axios";
+import axios from "../utils/axiosConfig";
 import {
   useAccount,
   usePrepareContractWrite,
@@ -190,7 +190,7 @@ const ItemDetail: React.FC = () => {
     if (!id) return;
     const fetchMarket = async () => {
       try {
-        const res = await axios.get(`/api/asset/market-data/${id}`);
+        const res = await axios.get(`/asset/market-data/${id}`);
         const data = res.data as { price: number; timestamp: string };
         setMarketData((prev) => [...prev.slice(-19), data]);
         setLatestPrice(data.price);
