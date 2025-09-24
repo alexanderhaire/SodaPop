@@ -1,7 +1,9 @@
 {
   "scripts": {
     "improve": "node scripts/improve_code.js",
-    "test": "jest"
+    "test": "jest",
+    "start": "npm --prefix frontend run preview",
+    "build": "npm --prefix frontend ci && npm --prefix frontend run build"
   },
   "devDependencies": {
     "@truffle/hdwallet-provider": "^2.1.15",
