@@ -21,13 +21,35 @@ router.post("/describe", async (req, res) => {
 // POST /api/items
 router.post("/", async (req, res) => {
   try {
-    let { itemType, description, image, pricingMode, sharePrice, totalShares } = req.body as any;
+    let {
+      itemType,
+      description,
+      image,
+      pricingMode,
+      sharePrice,
+      totalShares,
+      horseName,
+      trackLocation,
+      streamUrl,
+      legalContractUri,
+    } = req.body as any;
     if ((!itemType || !description) && image) {
       const generated = await generateTitleAndDescription(image);
       if (!itemType) itemType = generated.title;
       if (!description) description = generated.description;
     }
-    const data = { itemType, description, image, pricingMode, sharePrice, totalShares };
+    const data = {
+      itemType,
+      description,
+      image,
+      pricingMode,
+      sharePrice,
+      totalShares,
+      horseName,
+      trackLocation,
+      streamUrl,
+      legalContractUri,
+    };
     console.log("📩 New item submitted:", data);
     res.status(201).json({ message: "Item received", data });
   } catch (err) {
