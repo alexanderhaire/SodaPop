@@ -21,6 +21,7 @@ import {
   FormControl,
   FormLabel,
   Input,
+  Link,
 } from "@chakra-ui/react";
 import {
   LineChart,
@@ -58,6 +59,19 @@ const ItemDetail: React.FC = () => {
   const [calcEarnings, setCalcEarnings] = useState<string>("");
   const [marketData, setMarketData] = useState<{ price: number; timestamp: string }[]>([]);
   const [latestPrice, setLatestPrice] = useState<number | null>(null);
+  const [horseProfile, setHorseProfile] = useState<
+    | {
+        name: string;
+        trackLocation: string;
+        streamUrl: string;
+        legalContractUri: string;
+        metadataUri: string;
+        owner: string;
+        verified: boolean;
+      }
+    | null
+  >(null);
+  const [ownershipVerified, setOwnershipVerified] = useState<boolean | null>(null);
 
   const {
     config,
@@ -202,6 +216,61 @@ const ItemDetail: React.FC = () => {
     const interval = setInterval(fetchMarket, 5000);
     return () => clearInterval(interval);
   }, [id]);
+
+  useEffect(() => {
+    if (tokenId < 0) return;
+    const fetchHorseProfile = async () => {
+      try {
+        const result = (await readContract(undefined as any, {
+          address: HORSE_TOKEN_ADDRESS,
+          abi: horseTokenABI,
+          functionName: "getHorseProfile",
+          args: [tokenId],
+          chainId: 11155420,
+        })) as unknown as [
+          string,
+          string,
+          string,
+          string,
+          string,
+          string,
+          boolean
+        ];
+
+        const [name, trackLocation, streamUrl, legalContractUri, metadataUri, owner, verified] =
+          result;
+
+        const profile = {
+          name,
+          trackLocation,
+          streamUrl,
+          legalContractUri,
+          metadataUri,
+          owner,
+          verified,
+        };
+        setHorseProfile(profile);
+
+        if (verified && owner && owner !== ethers.ZeroAddress && legalContractUri) {
+          const isVerified = await readContract(undefined as any, {
+            address: HORSE_TOKEN_ADDRESS,
+            abi: horseTokenABI,
+            functionName: "verifyHorseOwnership",
+            args: [owner, tokenId, legalContractUri],
+            chainId: 11155420,
+          });
+          setOwnershipVerified(Boolean(isVerified));
+        } else {
+          setOwnershipVerified(false);
+        }
+      } catch (err) {
+        console.error("Failed to load horse profile:", err);
+        setHorseProfile(null);
+        setOwnershipVerified(null);
+      }
+    };
+    fetchHorseProfile();
+  }, [tokenId]);
 
   const item = items.find((i) => i.id === id);
   if (!item) {
@@ -375,6 +444,55 @@ const ItemDetail: React.FC = () => {
           </AccordionPanel>
         </AccordionItem>
       </Accordion>
+
+      {horseProfile && (
+        <Box mt={6} w="100%">
+          <Divider mb={4} />
+          <Heading size="md" mb={2} color="purple.500">
+            Ownership & Compliance
+          </Heading>
+          <VStack align="start" spacing={2} fontSize="sm">
+            {horseProfile.name && (
+              <Text>
+                <strong>Registered Horse:</strong> {horseProfile.name}
+              </Text>
+            )}
+            {horseProfile.trackLocation && (
+              <Text>
+                <strong>Primary Track:</strong> {horseProfile.trackLocation}
+              </Text>
+            )}
+            {horseProfile.owner && horseProfile.owner !== ethers.ZeroAddress && (
+              <Text>
+                <strong>On-Chain Owner:</strong> {horseProfile.owner}
+              </Text>
+            )}
+            {horseProfile.streamUrl && (
+              <Text>
+                <strong>Live Stream:</strong>{" "}
+                <Link href={horseProfile.streamUrl} color="purple.600" isExternal>
+                  Watch race feed
+                </Link>
+              </Text>
+            )}
+            {horseProfile.legalContractUri && (
+              <Text>
+                <strong>Legal Contract:</strong>{" "}
+                <Link href={horseProfile.legalContractUri} color="purple.600" isExternal>
+                  View signed agreement
+                </Link>
+              </Text>
+            )}
+            {ownershipVerified !== null && (
+              <Text color={ownershipVerified ? "green.500" : "red.500"} fontWeight="semibold">
+                {ownershipVerified
+                  ? "Ownership verified on-chain via legal contract reference."
+                  : "Ownership verification pending or legal reference mismatch."}
+              </Text>
+            )}
+          </VStack>
+        </Box>
+      )}
     </Box>
   );
 };

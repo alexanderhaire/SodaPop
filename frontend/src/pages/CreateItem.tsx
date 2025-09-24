@@ -25,7 +25,11 @@ import {
 const CreateItem = () => {
   const [form, setForm] = useState({
     sharePrice: "",
-    totalShares: ""
+    totalShares: "",
+    name: "",
+    trackLocation: "",
+    streamUrl: "",
+    legalContractUri: ""
   });
   const [itemType, setItemType] = useState<string>("");
   const [pricingMode, setPricingMode] = useState<'fixed' | 'variable'>('fixed');
@@ -82,6 +86,16 @@ const CreateItem = () => {
         return;
       }
 
+      if (!form.name || !form.streamUrl || !form.legalContractUri) {
+        toast({
+          status: "error",
+          title: "Missing details",
+          description:
+            "Horse name, stream URL, and legal contract reference are required for verification.",
+        });
+        return;
+      }
+
       let finalType = itemType;
       let finalDesc = description;
       if ((!finalType || !finalDesc) && imagePreview) {
@@ -110,6 +124,10 @@ const CreateItem = () => {
         totalShares,
         description: finalDesc,
         image: metadataURI,
+        horseName: form.name,
+        trackLocation: form.trackLocation,
+        streamUrl: form.streamUrl,
+        legalContractUri: form.legalContractUri,
       });
 
       const provider = typeof window !== "undefined" && (window as any).ethereum
@@ -125,7 +143,15 @@ const CreateItem = () => {
           horseTokenABI,
           signer
         );
-        tx = await variableToken.createHorse(totalShares, sharePriceWei, metadataURI);
+        tx = await variableToken.createHorse(
+          form.name,
+          form.trackLocation,
+          form.streamUrl,
+          form.legalContractUri,
+          metadataURI,
+          sharePriceWei,
+          totalShares
+        );
       } else {
         const fixedToken = new ethers.Contract(
           FIXED_TOKEN_ADDRESS,
@@ -154,6 +180,26 @@ const CreateItem = () => {
         </Box>
 
         <Box>
+          <FormLabel htmlFor="name">Horse Name</FormLabel>
+          <Input
+            name="name"
+            placeholder="Registered horse name"
+            value={form.name}
+            onChange={handleChange}
+          />
+        </Box>
+
+        <Box>
+          <FormLabel htmlFor="trackLocation">Track Location</FormLabel>
+          <Input
+            name="trackLocation"
+            placeholder="e.g., Churchill Downs"
+            value={form.trackLocation}
+            onChange={handleChange}
+          />
+        </Box>
+
+        <Box>
           <FormLabel htmlFor="sharePrice">Share Price (ETH)</FormLabel>
           <Input
             name="sharePrice"
@@ -170,6 +216,26 @@ const CreateItem = () => {
             name="totalShares"
             type="number"
             value={form.totalShares}
+            onChange={handleChange}
+          />
+        </Box>
+
+        <Box>
+          <FormLabel htmlFor="streamUrl">Live Stream URL</FormLabel>
+          <Input
+            name="streamUrl"
+            placeholder="https://your-stream-provider.com/horses/run"
+            value={form.streamUrl}
+            onChange={handleChange}
+          />
+        </Box>
+
+        <Box>
+          <FormLabel htmlFor="legalContractUri">Legal Contract Reference</FormLabel>
+          <Input
+            name="legalContractUri"
+            placeholder="ipfs:// or https:// reference to signed contract"
+            value={form.legalContractUri}
             onChange={handleChange}
           />
         </Box>
