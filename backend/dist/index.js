@@ -22,6 +22,7 @@ const marketData_1 = __importDefault(require("./routes/marketData"));
 const upload_1 = __importDefault(require("./routes/upload"));
 const config_1 = require("./utils/config");
 const eventMonitor_1 = require("./jobs/eventMonitor");
+const tokens_1 = require("./routes/tokens");
 dotenv_1.default.config();
 // Connect to MongoDB if a URI is provided
 if (config_1.MONGO_URI) {
@@ -50,6 +51,9 @@ app.get("/api/health", (_req, res) => {
 app.get("/api/hello", (_req, res) => {
     res.json({ message: "Hello from SodaPop backend!" });
 });
+app.post("/api/tokens/record", tokens_1.recordToken);
+app.get("/api/spotlight", tokens_1.getSpotlight);
+app.get("/api/portfolio", tokens_1.getPortfolio);
 function requireAuth(req, res, next) {
     const authHeader = req.headers.authorization;
     console.log("Auth header received:", authHeader);
@@ -86,6 +90,36 @@ app.use("/api", marketData_1.default);
 app.use("/api/leaderboard", leaderboard_1.default);
 // SodaBot chat endpoint (unprotected)
 app.use("/api/sodabot", sodabot_1.default);
+const frontendDistDir = path_1.default.resolve(process.cwd(), "frontend", "dist");
+const assetCacheRegex = /\.(css|js|mjs|cjs|json|ico|png|jpg|jpeg|gif|svg|webp|woff2?)$/i;
+if (fs_1.default.existsSync(frontendDistDir)) {
+    console.log("[static] Serving frontend assets from:", frontendDistDir);
+    app.use(express_1.default.static(frontendDistDir, {
+        index: false,
+        etag: true,
+        setHeaders(res, filePath) {
+            if (/\.html?$/.test(filePath)) {
+                res.setHeader("Cache-Control", "no-cache");
+                return;
+            }
+            if (assetCacheRegex.test(filePath)) {
+                res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+            }
+        },
+    }));
+    app.get("/*", (req, res, next) => {
+        if (req.path.startsWith("/api/") ||
+            req.path === "/api" ||
+            req.path.startsWith("/uploads/") ||
+            req.path === "/uploads" ||
+            req.path === "/healthz" ||
+            req.path.startsWith("/health")) {
+            next();
+            return;
+        }
+        res.sendFile(path_1.default.join(frontendDistDir, "index.html"));
+    });
+}
 const port = config_1.PORT;
 const host = "0.0.0.0";
 app.listen(port, host, () => {
