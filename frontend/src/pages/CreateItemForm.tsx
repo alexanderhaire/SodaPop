@@ -73,7 +73,27 @@ export default function CreateItemForm() {
     setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
   };
 
+  const describeFileType = (file: File) => {
+    if (file.type) {
+      return file.type;
+    }
+    const extension = file.name.split(".").pop();
+    return extension ? `.${extension}` : "an unknown type";
+  };
+
   const uploadFile = async (file: File) => {
+    const allowedMimeTypes = new Set(["image/png", "image/jpeg"]);
+    if (!allowedMimeTypes.has(file.type)) {
+      const providedType = describeFileType(file);
+      const message = `We couldn't upload your file because it is ${providedType}. Please use a PNG or JPG image.`;
+      setErrors((prev) => ({ ...prev, image: message }));
+      setIpfsUrl(null);
+      setImagePreviewUrl(null);
+      toast({ title: "Unsupported image type", description: message, status: "error" });
+      return;
+    }
+
+    setErrors((prev) => ({ ...prev, image: "" }));
     try {
       const { ipfsUri, previewUrl } = await uploadImage(file);
       setIpfsUrl(ipfsUri);
@@ -87,6 +107,7 @@ export default function CreateItemForm() {
           ? err.message
           : "We couldn't upload your image. Please try again.";
       toast({ title: "Failed to upload image", description, status: "error" });
+      setErrors((prev) => ({ ...prev, image: description }));
     }
   };
 
@@ -262,7 +283,7 @@ export default function CreateItemForm() {
             </FormHelperText>
           </FormControl>
 
-          <FormControl>
+          <FormControl isInvalid={!!errors.image}>
             <FormLabel>Image</FormLabel>
             <Box
               border="2px dashed"
@@ -300,6 +321,7 @@ export default function CreateItemForm() {
             <FormHelperText color="whiteAlpha.600">
               Supported formats: high-resolution imagery (PNG, JPG)
             </FormHelperText>
+            {errors.image && <FormErrorMessage>{errors.image}</FormErrorMessage>}
           </FormControl>
         </SimpleGrid>
 
