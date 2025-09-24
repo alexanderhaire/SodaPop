@@ -21,7 +21,7 @@ import { startEventMonitor } from "./jobs/eventMonitor";
 import {
   getPortfolio as getTokenPortfolio,
   getSpotlight,
-  recordLaunchedToken,
+  recordToken,
 } from "./routes/tokens";
 
 dotenv.config();
@@ -45,32 +45,6 @@ if (!fs.existsSync(uploadsDir)) {
 }
 app.use("/uploads", express.static(uploadsDir));
 
-const frontendDistDir = path.resolve(process.cwd(), "frontend", "dist");
-const assetCacheRegex = /\.(css|js|mjs|cjs|json|ico|png|jpg|jpeg|gif|svg|webp|woff2?)$/i;
-
-if (fs.existsSync(frontendDistDir)) {
-  console.log("[static] Serving frontend assets from:", frontendDistDir);
-  app.use(
-    express.static(frontendDistDir, {
-      index: false,
-      etag: true,
-      setHeaders(res, filePath) {
-        if (/\.html?$/.test(filePath)) {
-          res.setHeader("Cache-Control", "no-cache");
-          return;
-        }
-
-        if (assetCacheRegex.test(filePath)) {
-          res.setHeader(
-            "Cache-Control",
-            "public, max-age=31536000, immutable"
-          );
-        }
-      },
-    })
-  );
-}
-
 // Health check
 app.get("/healthz", (_req: Request, res: Response) => {
   res.status(200).send("ok");
@@ -85,7 +59,7 @@ app.get("/api/hello", (_req: Request, res: Response) => {
   res.json({ message: "Hello from SodaPop backend!" });
 });
 
-app.post("/api/tokens/record", recordLaunchedToken);
+app.post("/api/tokens/record", recordToken);
 app.get("/api/spotlight", getSpotlight);
 app.get("/api/portfolio", getTokenPortfolio);
 
@@ -135,7 +109,31 @@ app.use("/api/leaderboard", leaderboardRoutes);
 // SodaBot chat endpoint (unprotected)
 app.use("/api/sodabot", sodabotRoutes);
 
+const frontendDistDir = path.resolve(process.cwd(), "frontend", "dist");
+const assetCacheRegex = /\.(css|js|mjs|cjs|json|ico|png|jpg|jpeg|gif|svg|webp|woff2?)$/i;
+
 if (fs.existsSync(frontendDistDir)) {
+  console.log("[static] Serving frontend assets from:", frontendDistDir);
+  app.use(
+    express.static(frontendDistDir, {
+      index: false,
+      etag: true,
+      setHeaders(res, filePath) {
+        if (/\.html?$/.test(filePath)) {
+          res.setHeader("Cache-Control", "no-cache");
+          return;
+        }
+
+        if (assetCacheRegex.test(filePath)) {
+          res.setHeader(
+            "Cache-Control",
+            "public, max-age=31536000, immutable"
+          );
+        }
+      },
+    })
+  );
+
   app.get("/*", (req: Request, res: Response, next: NextFunction) => {
     if (
       req.path.startsWith("/api/") ||

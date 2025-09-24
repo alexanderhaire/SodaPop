@@ -110,7 +110,7 @@ const parseAmount = (raw: unknown): string => {
   }
 };
 
-export async function recordLaunchedToken(req: Request, res: Response) {
+export async function recordToken(req: Request, res: Response) {
   try {
     const z = (await import("zod")).z;
 
@@ -189,6 +189,8 @@ export async function recordLaunchedToken(req: Request, res: Response) {
     res.status(500).json({ error: "Failed to record launched token" });
   }
 }
+
+export const recordLaunchedToken = recordToken;
 
 export async function getSpotlight(_req: Request, res: Response) {
   try {
