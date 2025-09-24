@@ -8,23 +8,13 @@ import {
   Heading,
   HStack,
   Button,
-  Text,
-  useToast,
   Flex,
   Spacer,
   Badge,
   Stack,
 } from "@chakra-ui/react";
-import { useMemo, useState } from "react";
-import {
-  useWallet,
-} from "@solana/wallet-adapter-react";
-import {
-  WalletReadyState,
-  WalletName,
-} from "@solana/wallet-adapter-base";
+import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { clearToken } from "./utils/authToken";
-import { formatAddress } from "./utils/formatAddress";
 import ItemList from "./pages/ItemList";
 import Welcome from "./pages/Welcome";
 import ItemDetail from "./pages/ItemDetail";
@@ -37,32 +27,7 @@ import MyBoughtItems from "./pages/MyBoughtItems";
 import MySoldItems from "./pages/MySoldItems";
 
 const App: React.FC = () => {
-  const {
-    publicKey,
-    connected,
-    connecting,
-    wallets,
-    select,
-    connect,
-    disconnect,
-  } = useWallet();
   const navigate = useNavigate();
-  const toast = useToast();
-  const [pendingWallet, setPendingWallet] = useState<WalletName<string> | null>(
-    null
-  );
-
-  const address = useMemo(() => publicKey?.toBase58(), [publicKey]);
-
-  const availableWallets = useMemo(
-    () =>
-      wallets.filter((wallet) =>
-        [WalletReadyState.Installed, WalletReadyState.Loadable].includes(
-          wallet.readyState
-        )
-      ),
-    [wallets]
-  );
 
   const handleLogout = () => {
     clearToken();
@@ -75,27 +40,6 @@ const App: React.FC = () => {
     { label: "Portfolio", action: () => navigate("/my-items") },
     { label: "Telemetry", action: () => navigate("/analytics") },
   ];
-
-  const handleWalletConnect = async (
-    walletName: WalletName<string>
-  ) => {
-    try {
-      setPendingWallet(walletName);
-      await select(walletName);
-      await connect();
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Unable to connect to wallet";
-      toast({
-        title: "Wallet connection failed",
-        description: message,
-        status: "error",
-      });
-    }
-    setPendingWallet(null);
-  };
 
   return (
     <Box minH="100vh" pb={24}>
@@ -147,49 +91,15 @@ const App: React.FC = () => {
 
           <Spacer />
 
-          <Stack direction={{ base: "column", sm: "row" }} spacing={3} align="center">
-            {connected && address ? (
-              <HStack spacing={3}>
-                <Text fontSize="sm" color="whiteAlpha.700">
-                  {formatAddress(address)}
-                </Text>
-                <Button size="sm" variant="grey" onClick={() => disconnect()}>
-                  Disconnect
-                </Button>
-              </HStack>
-            ) : (
-              availableWallets.length > 0 ? (
-                availableWallets.map(({ adapter }) => (
-                  <Button
-                    key={adapter.name}
-                    onClick={() => handleWalletConnect(adapter.name)}
-                    isLoading={
-                      (connecting || pendingWallet === adapter.name) &&
-                      pendingWallet === adapter.name
-                    }
-                    size="sm"
-                    variant="cta"
-                  >
-                    Connect {adapter.name}
-                  </Button>
-                ))
-              ) : (
-                <Button
-                  size="sm"
-                  variant="cta"
-                  onClick={() =>
-                    toast({
-                      title: "No Solana wallets detected",
-                      description:
-                        "Install Phantom, Backpack, Solflare, or another Solana wallet extension.",
-                      status: "info",
-                    })
-                  }
-                >
-                  Install a Solana wallet
-                </Button>
-              )
-            )}
+          <Stack
+            direction={{ base: "column", sm: "row" }}
+            spacing={3}
+            align={{ base: "flex-end", sm: "center" }}
+            justify="flex-end"
+          >
+            <Box className="wallet-button">
+              <WalletMultiButton className="wallet-adapter-button-trigger" />
+            </Box>
             <Button size="sm" variant="grey" onClick={handleLogout}>
               Logout
             </Button>
