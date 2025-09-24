@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Alert,
   AlertDescription,
@@ -11,7 +11,10 @@ import {
   FormControl,
   FormHelperText,
   FormLabel,
+  GridItem,
   Heading,
+  HStack,
+  Image,
   Input,
   SimpleGrid,
   Stack,
@@ -40,6 +43,16 @@ const formatHash = (hash?: `0x${string}`) => {
   return `${hash.slice(0, 6)}…${hash.slice(-4)}`;
 };
 
+const formatFileSize = (bytes: number) => {
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  if (bytes >= 1024) {
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+  return `${bytes} B`;
+};
+
 const CreateItemForm = () => {
   const toast = useToast();
   const { address, isConnected } = useAccount();
@@ -49,8 +62,10 @@ const CreateItemForm = () => {
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [initialSupply, setInitialSupply] = useState("1000000");
+  const [photo, setPhoto] = useState<{ file: File; preview: string } | null>(null);
   const [state, setState] = useState<DeployState>({});
   const [isDeploying, setIsDeploying] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const factoryAddress = useMemo(() => {
     try {
@@ -64,6 +79,52 @@ const CreateItemForm = () => {
   }, []);
 
   const resetStatus = () => setState({});
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      setPhoto(null);
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Unsupported file",
+        description: "Select an image file (PNG, JPG, or GIF).",
+        status: "error",
+      });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Image too large",
+        description: "Keep the upload under 5 MB for a smooth preview.",
+        status: "error",
+      });
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhoto({ file, preview: reader.result as string });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handlePhotoReset = () => {
+    setPhoto(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleDeploy = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -238,6 +299,60 @@ const CreateItemForm = () => {
                 deployment.
               </FormHelperText>
             </FormControl>
+
+            <GridItem colSpan={{ base: 1, md: 2 }}>
+              <FormControl>
+                <FormLabel>Profile photo</FormLabel>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handlePhotoChange}
+                />
+                <FormHelperText>
+                  Optional hero image for your token dossier. The file never
+                  leaves your browser, stays under 5 MB, and can be included in
+                  off-chain metadata later.
+                </FormHelperText>
+              </FormControl>
+
+              {photo?.preview && (
+                <HStack
+                  mt={4}
+                  spacing={4}
+                  align="flex-start"
+                  bg="rgba(12, 18, 38, 0.7)"
+                  borderRadius="xl"
+                  border="1px solid rgba(114, 140, 255, 0.26)"
+                  p={4}
+                >
+                  <Image
+                    src={photo.preview}
+                    alt={photo.file.name}
+                    boxSize="96px"
+                    borderRadius="lg"
+                    objectFit="cover"
+                  />
+                  <Stack spacing={2} fontSize="sm">
+                    <Box>
+                      <Text fontWeight="semibold">{photo.file.name}</Text>
+                      <Text color="whiteAlpha.700">
+                        {formatFileSize(photo.file.size)}
+                      </Text>
+                    </Box>
+                    <Button
+                      size="xs"
+                      variant="ghost"
+                      colorScheme="purple"
+                      alignSelf="flex-start"
+                      onClick={handlePhotoReset}
+                    >
+                      Remove photo
+                    </Button>
+                  </Stack>
+                </HStack>
+              )}
+            </GridItem>
           </SimpleGrid>
 
           <Divider my={8} borderColor="rgba(148, 163, 255, 0.24)" />
