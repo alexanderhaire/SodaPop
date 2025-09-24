@@ -1,188 +1,163 @@
+import { useMemo, useState } from "react";
 import {
+  Alert,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
   Box,
   Button,
-  FormControl,
-  FormLabel,
-  FormErrorMessage,
-  FormHelperText,
-  Image,
-  Input,
-  Select,
-  Textarea,
-  useDisclosure,
-  useToast,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  SimpleGrid,
-  Text,
-  Heading,
-  Stack,
+  Code,
   Divider,
+  FormControl,
+  FormHelperText,
+  FormLabel,
+  Heading,
+  Input,
+  SimpleGrid,
+  Stack,
+  Text,
+  useToast,
   VStack,
 } from "@chakra-ui/react";
-import { useState, useRef } from "react";
-import axios from "../utils/axiosConfig";
-import { uploadImage } from "../utils/uploadImage";
+import { useAccount, usePublicClient, useWalletClient } from "wagmi";
+import { Hex, parseUnits } from "viem";
+import {
+  getTokenFactoryAddress,
+  tokenFactoryAbi,
+  tryDecodeTokenCreatedLog,
+} from "../utils/tokenFactory";
 
-export default function CreateItemForm() {
-  const [form, setForm] = useState({
-    itemType: "",
-    sharePrice: "",
-    totalShares: "",
-    description: "",
-    shareType: "Fixed",
-  });
+const DEFAULT_DECIMALS = 18;
 
-  const [ipfsUrl, setIpfsUrl] = useState<string | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  const [dragging, setDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+interface DeployState {
+  txHash?: `0x${string}`;
+  tokenAddress?: `0x${string}`;
+  error?: string;
+}
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
+const formatHash = (hash?: `0x${string}`) => {
+  if (!hash) return "";
+  return `${hash.slice(0, 6)}…${hash.slice(-4)}`;
+};
 
+const CreateItemForm = () => {
   const toast = useToast();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
 
-  const validateField = (name: string, value: string) => {
-    switch (name) {
-      case "itemType":
-      case "description":
-        return value.trim() ? "" : "Required";
-      case "sharePrice":
-        return parseFloat(value) > 0 ? "" : "Must be > 0";
-      case "totalShares":
-        return parseInt(value) > 0 ? "" : "Must be > 0";
-      default:
-        return "";
+  const [name, setName] = useState("");
+  const [symbol, setSymbol] = useState("");
+  const [initialSupply, setInitialSupply] = useState("1000000");
+  const [state, setState] = useState<DeployState>({});
+  const [isDeploying, setIsDeploying] = useState(false);
+
+  const factoryAddress = useMemo(() => {
+    try {
+      return getTokenFactoryAddress();
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Token factory address missing";
+      setState((prev) => ({ ...prev, error: message }));
+      return undefined;
     }
-  };
+  }, []);
 
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: validateField(name, value) }));
-  };
+  const resetStatus = () => setState({});
 
-  const describeFileType = (file: File) => {
-    if (file.type) {
-      return file.type;
-    }
-    const extension = file.name.split(".").pop();
-    return extension ? `.${extension}` : "an unknown type";
-  };
+  const handleDeploy = async (event: React.FormEvent) => {
+    event.preventDefault();
+    resetStatus();
 
-  const uploadFile = async (file: File) => {
-    const allowedMimeTypes = new Set(["image/png", "image/jpeg"]);
-    if (!allowedMimeTypes.has(file.type)) {
-      const providedType = describeFileType(file);
-      const message = `We couldn't upload your file because it is ${providedType}. Please use a PNG or JPG image.`;
-      setErrors((prev) => ({ ...prev, image: message }));
-      setIpfsUrl(null);
-      setImagePreviewUrl(null);
-      toast({ title: "Unsupported image type", description: message, status: "error" });
+    if (!walletClient || !publicClient || !factoryAddress) {
+      toast({
+        title: "Wallet not connected",
+        description: "Connect your wallet to deploy a token.",
+        status: "error",
+      });
       return;
     }
 
-    setErrors((prev) => ({ ...prev, image: "" }));
-    try {
-      const { ipfsUri, previewUrl } = await uploadImage(file);
-      setIpfsUrl(ipfsUri);
-      setImagePreviewUrl(previewUrl);
-    } catch (err) {
-      console.error("Image upload error:", err);
-      setIpfsUrl(null);
-      setImagePreviewUrl(null);
-      const description =
-        err instanceof Error
-          ? err.message
-          : "We couldn't upload your image. Please try again.";
-      toast({ title: "Failed to upload image", description, status: "error" });
-      setErrors((prev) => ({ ...prev, image: description }));
-    }
-  };
+    const trimmedName = name.trim();
+    const trimmedSymbol = symbol.trim();
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      uploadFile(file);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      uploadFile(file);
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragging(false);
-  };
-
-  const createItem = async () => {
-    if (!ipfsUrl) {
-      toast({ title: "Image not uploaded", status: "error" });
+    if (!trimmedName || !trimmedSymbol) {
+      toast({
+        title: "Missing token metadata",
+        description: "Provide both a token name and symbol.",
+        status: "error",
+      });
       return;
     }
 
-    const payload = {
-      ...form,
-      sharePrice: parseFloat(form.sharePrice),
-      totalShares: parseInt(form.totalShares),
-      shareType: form.shareType,
-      image: ipfsUrl,
-    };
+    let supply: bigint;
+    try {
+      supply = parseUnits(initialSupply, DEFAULT_DECIMALS);
+    } catch (err) {
+      toast({
+        title: "Invalid supply",
+        description: "Enter a numeric initial supply.",
+        status: "error",
+      });
+      return;
+    }
+
+    if (supply <= 0n) {
+      toast({
+        title: "Invalid supply",
+        description: "Initial supply must be greater than zero.",
+        status: "error",
+      });
+      return;
+    }
+
+    setIsDeploying(true);
 
     try {
-      await axios.post("/items", payload);
-      toast({ title: "Item created", status: "success" });
-      onClose();
+      const hash = await walletClient.writeContract({
+        address: factoryAddress,
+        abi: tokenFactoryAbi,
+        functionName: "createToken",
+        args: [trimmedName, trimmedSymbol.toUpperCase(), supply],
+        account: walletClient.account,
+      });
+
+      setState({ txHash: hash });
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash });
+      let createdToken: `0x${string}` | undefined;
+
+      for (const log of receipt.logs) {
+        const decoded = tryDecodeTokenCreatedLog(log);
+        if (decoded && decoded.owner.toLowerCase() === address?.toLowerCase()) {
+          createdToken = decoded.token;
+          break;
+        }
+      }
+
+      setState({ txHash: hash, tokenAddress: createdToken });
+
+      toast({
+        title: "Token deployed",
+        description: createdToken
+          ? `Token contract deployed at ${createdToken}`
+          : "Transaction confirmed.",
+        status: "success",
+      });
     } catch (err) {
-      console.error("Item creation error:", err);
-      toast({ title: "Failed to create item", status: "error" });
+      const message =
+        err instanceof Error ? err.message : "Failed to deploy token";
+      console.error("Token deployment failed", err);
+      setState({ error: message });
+      toast({ title: "Deployment failed", description: message, status: "error" });
     } finally {
-      setIsSubmitting(false);
+      setIsDeploying(false);
     }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const errs: Record<string, string> = {
-      itemType: validateField("itemType", form.itemType),
-      sharePrice: validateField("sharePrice", form.sharePrice),
-      totalShares: validateField("totalShares", form.totalShares),
-      description: validateField("description", form.description),
-    };
-    setErrors(errs);
-    const hasError = Object.values(errs).some((msg) => msg);
-    if (hasError || !ipfsUrl) {
-      toast({ title: "Please fix form errors", status: "error" });
-      return;
-    }
-    onOpen();
   };
 
   return (
     <Box
-      maxW="960px"
+      maxW="720px"
       mx="auto"
       p={{ base: 6, md: 10 }}
       bg="rgba(9, 14, 30, 0.82)"
@@ -190,216 +165,120 @@ export default function CreateItemForm() {
       border="1px solid rgba(148, 163, 255, 0.22)"
       boxShadow="0 28px 70px rgba(4, 9, 24, 0.75)"
     >
-      <Heading size="lg" mb={2}>
-        Launch Forge blueprint
-      </Heading>
-      <Text color="whiteAlpha.700" mb={8} fontSize="sm">
-        Define the parameters of your next legendary drop. Precision here powers
-        every on-chain move that follows.
-      </Text>
-      <form onSubmit={handleSubmit}>
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-          <FormControl isInvalid={!!errors.itemType}>
-            <FormLabel>Item Type</FormLabel>
-            <Input
-              name="itemType"
-              value={form.itemType}
-              onChange={handleChange}
-              variant="glass"
-            />
-            <FormHelperText color="whiteAlpha.600">
-              e.g. Thoroughbred, Champion Art, Breeding Rights
-            </FormHelperText>
-            {errors.itemType && (
-              <FormErrorMessage>{errors.itemType}</FormErrorMessage>
-            )}
-          </FormControl>
+      <VStack spacing={8} align="stretch">
+        <Stack spacing={2}>
+          <Heading size="lg">Spin up a token</Heading>
+          <Text color="whiteAlpha.700" fontSize="sm">
+            Configure a name, symbol, and initial supply. Your wallet will sign a
+            single transaction that deploys a minimal ERC-20 and mints the full
+            supply to you.
+          </Text>
+        </Stack>
 
-          <FormControl isInvalid={!!errors.sharePrice}>
-            <FormLabel>Share Price (ETH)</FormLabel>
-            <Input
-              name="sharePrice"
-              type="number"
-              step="0.01"
-              value={form.sharePrice}
-              onChange={handleChange}
-              variant="glass"
-            />
-            <FormHelperText color="whiteAlpha.600">
-              Base price for each ownership shard
-            </FormHelperText>
-            {errors.sharePrice && (
-              <FormErrorMessage>{errors.sharePrice}</FormErrorMessage>
-            )}
-          </FormControl>
-
-          <FormControl isInvalid={!!errors.totalShares}>
-            <FormLabel>Total Shares</FormLabel>
-            <Input
-              name="totalShares"
-              type="number"
-              value={form.totalShares}
-              onChange={handleChange}
-              variant="glass"
-            />
-            <FormHelperText color="whiteAlpha.600">
-              Total supply available for collectors
-            </FormHelperText>
-            {errors.totalShares && (
-              <FormErrorMessage>{errors.totalShares}</FormErrorMessage>
-            )}
-          </FormControl>
-
-          <FormControl isInvalid={!!errors.description}>
-            <FormLabel>Description</FormLabel>
-            <Textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              variant="glass"
-              rows={5}
-            />
-            <FormHelperText color="whiteAlpha.600">
-              Craft the mythos and strategic positioning for this asset
-            </FormHelperText>
-            {errors.description && (
-              <FormErrorMessage>{errors.description}</FormErrorMessage>
-            )}
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Share Type</FormLabel>
-            <Select
-              name="shareType"
-              value={form.shareType}
-              onChange={handleChange}
-              variant="filled"
-            >
-              <option value="Fixed">Fixed</option>
-              <option value="Variable">Variable</option>
-            </Select>
-            <FormHelperText color="whiteAlpha.600">
-              Configure whether your curve is static or reactive
-            </FormHelperText>
-          </FormControl>
-
-          <FormControl isInvalid={!!errors.image}>
-            <FormLabel>Image</FormLabel>
-            <Box
-              border="2px dashed"
-              borderColor={dragging ? "cyan.300" : "rgba(148, 163, 255, 0.35)"}
-              p={6}
-              textAlign="center"
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              cursor="pointer"
-              onClick={() => fileInputRef.current?.click()}
-              bg="rgba(8, 14, 32, 0.6)"
-              borderRadius="xl"
-              transition="border-color 0.2s ease"
-            >
-              {imagePreviewUrl ? (
-                <Image
-                  src={imagePreviewUrl}
-                  alt="preview"
-                  maxH="200px"
-                  mx="auto"
-                  borderRadius="lg"
-                />
-              ) : (
-                <Text color="whiteAlpha.600">Drag & drop or click to upload</Text>
-              )}
-              <Input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={handleFileChange}
-              />
-            </Box>
-            <FormHelperText color="whiteAlpha.600">
-              Supported formats: high-resolution imagery (PNG, JPG)
-            </FormHelperText>
-            {errors.image && <FormErrorMessage>{errors.image}</FormErrorMessage>}
-          </FormControl>
-        </SimpleGrid>
-
-        <Divider my={8} borderColor="rgba(148, 163, 255, 0.25)" />
-        {imagePreviewUrl && (
-          <Box
-            mt={4}
-            p={6}
-            borderRadius="2xl"
-            bg="rgba(8, 14, 32, 0.85)"
-            border="1px solid rgba(114, 140, 255, 0.2)"
-            boxShadow="0 16px 45px rgba(4, 9, 24, 0.6)"
-          >
-            <Heading size="md" mb={4}>
-              Vision preview
-            </Heading>
-            <Stack direction={{ base: "column", md: "row" }} spacing={6} align="center">
-              <Image src={imagePreviewUrl} alt="Preview" maxH="180px" borderRadius="xl" />
-              <VStack align="stretch" spacing={2} color="whiteAlpha.700">
-                <Text>
-                  <strong>Type:</strong> {form.itemType}
-                </Text>
-                <Text>
-                  <strong>Share Price:</strong> {form.sharePrice} ETH
-                </Text>
-                <Text>
-                  <strong>Total Shares:</strong> {form.totalShares}
-                </Text>
-                <Text>
-                  <strong>Share Type:</strong> {form.shareType}
-                </Text>
-                <Text>
-                  <strong>Description:</strong> {form.description}
-                </Text>
-              </VStack>
+        {!isConnected && (
+          <Alert status="info" borderRadius="md">
+            <AlertIcon />
+            <Stack spacing={1}>
+              <AlertTitle>Connect your wallet</AlertTitle>
+              <AlertDescription>
+                You need to connect a wallet to deploy tokens through the
+                factory.
+              </AlertDescription>
             </Stack>
-          </Box>
+          </Alert>
         )}
 
-        <Button
-          type="submit"
-          mt={4}
-          isLoading={isSubmitting}
-          variant="cta"
-        >
-          Stage verification
-        </Button>
-      </form>
+        {state.error && (
+          <Alert status="error" borderRadius="md">
+            <AlertIcon />
+            <AlertTitle>Unable to deploy token</AlertTitle>
+            <AlertDescription>{state.error}</AlertDescription>
+          </Alert>
+        )}
 
-      <Modal isOpen={isOpen} onClose={onClose} isCentered>
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Confirm launch blueprint</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Text mb={2}>Item Type: {form.itemType}</Text>
-            <Text mb={2}>Share Price: {form.sharePrice} ETH</Text>
-            <Text mb={2}>Total Shares: {form.totalShares}</Text>
-            <Text mb={2}>Share Type: {form.shareType}</Text>
-            <Text>Description: {form.description}</Text>
-          </ModalBody>
-          <ModalFooter>
-            <Button mr={3} onClick={onClose} variant="ghost">
-              Edit
-            </Button>
-            <Button
-              variant="cta"
-              onClick={() => {
-                setIsSubmitting(true);
-                createItem();
-              }}
-              isLoading={isSubmitting}
-            >
-              Confirm
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+        <Box as="form" onSubmit={handleDeploy}>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+            <FormControl isRequired>
+              <FormLabel>Token name</FormLabel>
+              <Input
+                placeholder="SodaPop"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+              />
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel>Symbol</FormLabel>
+              <Input
+                placeholder="SODA"
+                value={symbol}
+                textTransform="uppercase"
+                onChange={(event) => setSymbol(event.target.value.toUpperCase())}
+              />
+              <FormHelperText>3-8 characters works best.</FormHelperText>
+            </FormControl>
+
+            <FormControl isRequired>
+              <FormLabel>Initial supply</FormLabel>
+              <Input
+                placeholder="1000000"
+                value={initialSupply}
+                onChange={(event) => setInitialSupply(event.target.value)}
+              />
+              <FormHelperText>
+                Minted with {DEFAULT_DECIMALS} decimals directly to your wallet.
+              </FormHelperText>
+            </FormControl>
+
+            <FormControl>
+              <FormLabel>Factory contract</FormLabel>
+              <Input value={factoryAddress ?? "Not configured"} isReadOnly />
+              <FormHelperText>
+                Update <Code>VITE_TOKEN_FACTORY_ADDRESS</Code> to point at your
+                deployment.
+              </FormHelperText>
+            </FormControl>
+          </SimpleGrid>
+
+          <Divider my={8} borderColor="rgba(148, 163, 255, 0.24)" />
+
+          <Button
+            type="submit"
+            variant="cta"
+            size="lg"
+            width="100%"
+            isLoading={isDeploying}
+            loadingText="Deploying token"
+            isDisabled={!isConnected || !factoryAddress}
+          >
+            Launch token
+          </Button>
+        </Box>
+
+        {(state.txHash || state.tokenAddress) && (
+          <Stack spacing={4}>
+            {state.txHash && (
+              <Box>
+                <Text fontWeight="semibold" mb={1}>
+                  Transaction hash
+                </Text>
+                <Code>{formatHash(state.txHash)}</Code>
+              </Box>
+            )}
+
+            {state.tokenAddress && (
+              <Box>
+                <Text fontWeight="semibold" mb={1}>
+                  Token address
+                </Text>
+                <Code>{state.tokenAddress}</Code>
+              </Box>
+            )}
+          </Stack>
+        )}
+      </VStack>
     </Box>
   );
-}
+};
+
+export default CreateItemForm;
