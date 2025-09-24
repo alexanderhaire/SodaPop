@@ -16,7 +16,7 @@ export const uploadImage = async (file: File) => {
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const response = await axios.post("/upload", formData, {
+  const response = await axios.post("upload", formData, {
     headers,
   });
 
