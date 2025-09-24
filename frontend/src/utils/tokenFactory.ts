@@ -36,13 +36,18 @@ export interface TokenCreatedEventArgs {
 }
 
 export const getTokenFactoryAddress = (): `0x${string}` => {
-  const raw = import.meta.env.VITE_TOKEN_FACTORY_ADDRESS?.trim();
+  const raw =
+    import.meta.env.VITE_TOKEN_FACTORY_ADDRESS?.trim() ||
+    import.meta.env.VITE_HORSE_FACTORY_ADDRESS?.trim();
+
   if (!raw) {
     throw new Error("Token factory address is not configured");
   }
+
   if (!raw.startsWith("0x")) {
     throw new Error("Token factory address must be a hex string");
   }
+
   return raw as `0x${string}`;
 };
 
