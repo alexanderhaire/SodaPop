@@ -1,5 +1,5 @@
 // File: frontend/src/utils/authToken.ts
-const TOKEN_KEY = "sodapop_jwt";
+export const TOKEN_KEY = "sodapop_jwt";
 
 export function setToken(token: string) {
   localStorage.setItem(TOKEN_KEY, token);
