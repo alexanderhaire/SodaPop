@@ -123,10 +123,7 @@ export default function CreateItemForm() {
     };
 
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL}/api/items`,
-        payload,
-      );
+      await axios.post("/items", payload);
       toast({ title: "Item created", status: "success" });
       onClose();
     } catch (err) {

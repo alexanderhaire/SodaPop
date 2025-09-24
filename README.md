@@ -166,10 +166,13 @@ Copy `.env.example` to `.env` and fill in:
 - **PORT** — Backend port (default `4000`)
 - **OPENAI_API_KEY** — OpenAI key for the chatbot and image captioning
 - **ALCHEMY_API_URL** — RPC endpoint for contract calls
-- **DEPLOYER_PRIVATE_KEY** — Private key for contract deployment
+- **PRIVATE_KEY** or **DEPLOYER_PRIVATE_KEY** — Wallet used for contract writes
 - **JWT_SECRET** — Secret used to sign JWTs
 - **JWT_EXPIRES_IN** — Token lifetime (e.g. `1d`)
 - **MONGO_URI** — MongoDB connection string
+- **SMTP_HOST**, **SMTP_PORT**, **SMTP_USER**, **SMTP_PASS**, **ALERT_EMAIL** — Optional email alert configuration
+- **VITE_BACKEND_URL** — Base URL of the deployed backend (omit for same-origin deployments)
+- **VITE_SAMPLE_METADATA_URL** — Optional sample metadata used by the create flow
 - **VITE_NFT_STORAGE_KEY** — API key for NFT.Storage V2 uploads
 - **VITE_HORSE_FACTORY_ADDRESS** — Deployed HorseFactory address
 
