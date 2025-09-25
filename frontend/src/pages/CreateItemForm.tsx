@@ -229,6 +229,7 @@ const CreateItemForm = () => {
     }
 
     const walletAddress = publicKey.toBase58();
+    const cluster = import.meta.env.VITE_CLUSTER ?? "mainnet";
 
     const trimmedName = name.trim();
     const trimmedSymbol = symbol.trim().toUpperCase();
@@ -328,16 +329,22 @@ const CreateItemForm = () => {
         tokenAccount: tokenAccountAddress,
       });
 
-      const recordPayload: RecordTokenPayload = {
-        mint: mintAddress,
-        tx: signature,
+      const formValues = {
         name: trimmedName,
         symbol: trimmedSymbol,
-        creatorWallet: walletAddress,
-        ata: tokenAccountAddress,
-        amount: supply.toString(),
+        initialSupply,
         decimals: DEFAULT_DECIMALS,
-        imageUrl: photo?.preview ?? undefined,
+        imagePreview: photo?.preview ?? null,
+        documentName: documentAttachment?.file?.name ?? null,
+        rpcEndpoint: networkEndpoint,
+      };
+
+      const recordPayload: RecordTokenPayload = {
+        network: cluster,
+        owner: walletAddress,
+        mint: mintAddress,
+        signature,
+        metadata: formValues, // name/symbol/image/docs etc.
       };
 
       let persistError: Error | null = null;
