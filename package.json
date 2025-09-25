@@ -3,7 +3,7 @@
   "private": true,
   "workspaces": ["frontend", "server"],
   "scripts": {
-    "build": "npm --prefix frontend run build && npm --prefix server run build",
+    "build": "npm --prefix frontend rebuild esbuild && npm --prefix frontend run build && npm --prefix server run build",
     "start": "npm --prefix server run start"
   }
 }
