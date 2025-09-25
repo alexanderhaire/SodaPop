@@ -41,7 +41,7 @@ import {
   getAssociatedTokenAddressSync,
   getMinimumBalanceForRentExemptMint,
 } from "@solana/spl-token";
-import { recordToken, type RecordTokenPayload } from "@/lib/recordToken";
+import { recordToken } from "@/lib/recordToken";
 
 const DEFAULT_DECIMALS = 9;
 
@@ -52,9 +52,11 @@ interface DeployState {
   error?: string;
 }
 
+type RecordTokenArgs = Parameters<typeof recordToken>[0];
+
 type SpotlightState =
   | { ok: true }
-  | { ok: false; error: string; pending: RecordTokenPayload };
+  | { ok: false; error: string; pending: RecordTokenArgs };
 
 const formatSignature = (signature?: string) => {
   if (!signature) return "";
@@ -339,7 +341,7 @@ const CreateItemForm = () => {
         rpcEndpoint: networkEndpoint,
       };
 
-      const recordPayload: RecordTokenPayload = {
+      const recordPayload: RecordTokenArgs = {
         network: cluster,
         owner: walletAddress,
         mint: mintAddress,

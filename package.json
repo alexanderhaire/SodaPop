@@ -1,22 +1,9 @@
 {
+  "name": "sodapop",
+  "private": true,
+  "workspaces": ["frontend", "server"],
   "scripts": {
-    "improve": "node scripts/improve_code.js",
-    "test": "jest",
-    "start": "npm --prefix backend run build && npm --prefix backend run start",
-    "build": "npm --prefix frontend ci && npm --prefix frontend run build"
-  },
-  "devDependencies": {
-    "@truffle/hdwallet-provider": "^2.1.15",
-    "@types/jest": "^30.0.0",
-    "ganache": "^7.9.2",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.4.0"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "^5.3.0",
-    "diff": "^5.2.0",
-    "dotenv": "^16.5.0",
-    "ethers": "^6.14.4",
-    "openai": "^5.3.0"
+    "build": "npm --prefix frontend run build && npm --prefix server run build",
+    "start": "npm --prefix server run start"
   }
 }

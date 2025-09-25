@@ -237,7 +237,11 @@ const Welcome: React.FC = () => {
 
   const heroVariants = {
     hidden: { opacity: 0, y: 24 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6 },
+    },
   };
 
   const gridVariants = {
@@ -251,7 +255,11 @@ const Welcome: React.FC = () => {
 
   const cardVariants = {
     hidden: { opacity: 0, y: 24 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.45 },
+    },
   };
 
   return (
