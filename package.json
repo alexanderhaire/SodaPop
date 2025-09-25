@@ -5,8 +5,5 @@
   "scripts": {
     "build": "npm --prefix frontend rebuild esbuild && npm --prefix frontend run build && npm --prefix server run build",
     "start": "npm --prefix server run start"
-  },
-  "overrides": {
-    "esbuild": "0.25.10"
   }
 }
