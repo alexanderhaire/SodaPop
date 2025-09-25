@@ -41,7 +41,7 @@ import {
   getAssociatedTokenAddressSync,
   getMinimumBalanceForRentExemptMint,
 } from "@solana/spl-token";
-import { recordToken } from "@/lib/recordToken";
+import { recordToken, type RecordTokenPayload } from "@/lib/recordToken";
 
 const DEFAULT_DECIMALS = 9;
 
@@ -54,7 +54,7 @@ interface DeployState {
 
 type SpotlightState =
   | { ok: true }
-  | { ok: false; error: string; pending: { mint: string; signature: string } };
+  | { ok: false; error: string; pending: RecordTokenPayload };
 
 const formatSignature = (signature?: string) => {
   if (!signature) return "";
@@ -111,30 +111,6 @@ const CreateItemForm = () => {
   const documentInputRef = useRef<HTMLInputElement | null>(null);
 
   const networkEndpoint = useMemo(() => connection.rpcEndpoint, [connection]);
-  const formValues = useMemo(
-    () => ({
-      name: name.trim(),
-      symbol: symbol.trim().toUpperCase(),
-      initialSupply,
-      photo: photo
-        ? {
-            name: photo.file.name,
-            size: photo.file.size,
-            type: photo.file.type,
-            preview: photo.preview,
-          }
-        : null,
-      document: documentAttachment
-        ? {
-            name: documentAttachment.file.name,
-            size: documentAttachment.file.size,
-            type: documentAttachment.file.type,
-          }
-        : null,
-    }),
-    [name, symbol, initialSupply, photo, documentAttachment]
-  );
-
   const resetStatus = () => {
     setState({});
     setSpotlightState(undefined);
@@ -352,16 +328,21 @@ const CreateItemForm = () => {
         tokenAccount: tokenAccountAddress,
       });
 
+      const recordPayload: RecordTokenPayload = {
+        mint: mintAddress,
+        tx: signature,
+        name: trimmedName,
+        symbol: trimmedSymbol,
+        creatorWallet: walletAddress,
+        ata: tokenAccountAddress,
+        amount: supply.toString(),
+        decimals: DEFAULT_DECIMALS,
+        imageUrl: photo?.preview ?? undefined,
+      };
+
       let persistError: Error | null = null;
-      const result = { signature, mint: mintAddress };
       try {
-        await recordToken({
-          network: import.meta.env.VITE_CLUSTER ?? "mainnet",
-          owner: wallet.publicKey?.toBase58?.(),
-          mint: result.mint,
-          signature: result.signature,
-          metadata: formValues,
-        });
+        await recordToken(recordPayload);
         setSpotlightState({ ok: true });
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["spotlight"] }),
@@ -374,7 +355,7 @@ const CreateItemForm = () => {
         setSpotlightState({
           ok: false,
           error: persistError.message,
-          pending: result,
+          pending: recordPayload,
         });
       }
 
@@ -650,13 +631,7 @@ const CreateItemForm = () => {
                   return;
                 }
                 try {
-                  await recordToken({
-                    network: import.meta.env.VITE_CLUSTER ?? "mainnet",
-                    owner: wallet.publicKey?.toBase58?.(),
-                    mint: spotlightState.pending.mint,
-                    signature: spotlightState.pending.signature,
-                    metadata: formValues,
-                  });
+                  await recordToken(spotlightState.pending);
                   setSpotlightState({ ok: true });
                   const walletAddress = wallet.publicKey?.toBase58?.();
                   if (walletAddress) {
