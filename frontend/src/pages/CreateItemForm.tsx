@@ -41,6 +41,7 @@ import {
   getAssociatedTokenAddressSync,
   getMinimumBalanceForRentExemptMint,
 } from "@solana/spl-token";
+import { recordToken } from "@/lib/recordToken";
 
 const DEFAULT_DECIMALS = 9;
 
@@ -50,6 +51,10 @@ interface DeployState {
   tokenAccount?: string;
   error?: string;
 }
+
+type SpotlightState =
+  | { ok: true }
+  | { ok: false; error: string; pending: { mint: string; signature: string } };
 
 const formatSignature = (signature?: string) => {
   if (!signature) return "";
@@ -87,7 +92,8 @@ const parseTokenSupply = (raw: string, decimals: number): bigint => {
 
 const CreateItemForm = () => {
   const toast = useToast();
-  const { publicKey, connected, sendTransaction } = useWallet();
+  const wallet = useWallet();
+  const { publicKey, connected, sendTransaction } = wallet;
   const { connection } = useConnection();
   const queryClient = useQueryClient();
 
@@ -99,13 +105,40 @@ const CreateItemForm = () => {
     null
   );
   const [state, setState] = useState<DeployState>({});
+  const [spotlightState, setSpotlightState] = useState<SpotlightState>();
   const [isDeploying, setIsDeploying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const documentInputRef = useRef<HTMLInputElement | null>(null);
 
   const networkEndpoint = useMemo(() => connection.rpcEndpoint, [connection]);
+  const formValues = useMemo(
+    () => ({
+      name: name.trim(),
+      symbol: symbol.trim().toUpperCase(),
+      initialSupply,
+      photo: photo
+        ? {
+            name: photo.file.name,
+            size: photo.file.size,
+            type: photo.file.type,
+            preview: photo.preview,
+          }
+        : null,
+      document: documentAttachment
+        ? {
+            name: documentAttachment.file.name,
+            size: documentAttachment.file.size,
+            type: documentAttachment.file.type,
+          }
+        : null,
+    }),
+    [name, symbol, initialSupply, photo, documentAttachment]
+  );
 
-  const resetStatus = () => setState({});
+  const resetStatus = () => {
+    setState({});
+    setSpotlightState(undefined);
+  };
 
   const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -320,43 +353,29 @@ const CreateItemForm = () => {
       });
 
       let persistError: Error | null = null;
+      const result = { signature, mint: mintAddress };
       try {
-        const response = await fetch("/api/tokens/record", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            tx: signature,
-            mint: mintAddress,
-            ata: tokenAccountAddress,
-            amount: supply.toString(),
-            name: trimmedName,
-            symbol: trimmedSymbol,
-            imageUrl: photo?.preview ?? undefined,
-            creatorWallet: walletAddress,
-            decimals: DEFAULT_DECIMALS,
-          }),
+        await recordToken({
+          network: import.meta.env.VITE_CLUSTER ?? "mainnet",
+          owner: wallet.publicKey?.toBase58?.(),
+          mint: result.mint,
+          signature: result.signature,
+          metadata: formValues,
         });
-
-        if (!response.ok) {
-          let message = "Failed to record token launch";
-          try {
-            const payload = await response.json();
-            if (payload && typeof payload.error === "string") {
-              message = payload.error;
-            }
-          } catch (parseErr) {
-            console.warn("Unable to parse record-token response", parseErr);
-          }
-          throw new Error(message);
-        }
-
+        setSpotlightState({ ok: true });
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: ["spotlight"] }),
           queryClient.invalidateQueries({ queryKey: ["portfolio", walletAddress] }),
         ]);
       } catch (err) {
         console.error("Failed to persist launched token", err);
-        persistError = err instanceof Error ? err : new Error("Failed to persist launched token");
+        persistError =
+          err instanceof Error ? err : new Error("Failed to persist launched token");
+        setSpotlightState({
+          ok: false,
+          error: persistError.message,
+          pending: result,
+        });
       }
 
       toast({
@@ -617,6 +636,43 @@ const CreateItemForm = () => {
               </Box>
             )}
           </Stack>
+        )}
+
+        {spotlightState?.ok === false && (
+          <div className="mt-3 rounded-xl border border-zinc-800 p-3 text-sm">
+            <div className="mb-2 text-amber-400">
+              Token minted, but saving to Spotlight failed: {spotlightState.error}
+            </div>
+            <button
+              className="rounded-lg bg-emerald-500 px-3 py-1.5 font-semibold text-zinc-950 hover:bg-emerald-400"
+              onClick={async () => {
+                if (!spotlightState.pending) {
+                  return;
+                }
+                try {
+                  await recordToken({
+                    network: import.meta.env.VITE_CLUSTER ?? "mainnet",
+                    owner: wallet.publicKey?.toBase58?.(),
+                    mint: spotlightState.pending.mint,
+                    signature: spotlightState.pending.signature,
+                    metadata: formValues,
+                  });
+                  setSpotlightState({ ok: true });
+                  const walletAddress = wallet.publicKey?.toBase58?.();
+                  if (walletAddress) {
+                    await Promise.all([
+                      queryClient.invalidateQueries({ queryKey: ["spotlight"] }),
+                      queryClient.invalidateQueries({ queryKey: ["portfolio", walletAddress] }),
+                    ]);
+                  }
+                } catch (e: any) {
+                  alert(`Retry failed: ${e.message}`);
+                }
+              }}
+            >
+              Retry save to Spotlight
+            </button>
+          </div>
         )}
       </VStack>
     </Box>

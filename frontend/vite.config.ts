@@ -34,7 +34,7 @@ export default defineConfig({
   server: {
     open: false,
     proxy: {
-      '/api': 'http://localhost:4000',
+      '/api': { target: 'http://localhost:4000', changeOrigin: true },
     },
   },
   build: {
@@ -55,6 +55,7 @@ export default defineConfig({
       process: 'process/browser',
       'process/browser': 'process/browser.js',
       'process/browser/': 'process/browser.js',
+      '@': path.resolve(__dirname, 'src'),
       'motion-utils/dist/es/window-config.mjs': 'motion-utils/dist/es/global-config.mjs',
     },
   },
