@@ -7,7 +7,7 @@ exports.MONGO_URI = exports.ALERT_EMAIL = exports.SMTP_PASS = exports.SMTP_USER 
 const dotenv_1 = __importDefault(require("dotenv"));
 dotenv_1.default.config();
 const getString = (value, fallback = "") => (value ?? "").trim() || fallback;
-exports.PORT = Number(process.env.PORT) || 8080;
+exports.PORT = Number(process.env.PORT) || 4000;
 exports.OPENAI_API_KEY = getString(process.env.OPENAI_API_KEY);
 exports.SOLANA_RPC_URL = getString(process.env.SOLANA_RPC_URL, "https://api.devnet.solana.com");
 exports.JWT_SECRET = getString(process.env.JWT_SECRET, "replace_with_strong_secret");
