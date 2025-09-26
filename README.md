@@ -1,228 +1,141 @@
-# Grey MarketPlace
+# SodaPop Ascension Hub
 
-**Grey MarketPlace** is a decentralized marketplace for creating, buying, and selling both **variable** and **fixed** assets — combining Web3-powered investment infrastructure with on-chain commerce fulfillment.
+SodaPop is a full-stack Solana launchpad that helps creators mint SPL tokens, stage rich listings, and provide investors with real-time portfolio telemetry. The project combines a Vite + React front end with a Node.js/Express API, MongoDB persistence, and OpenAI-powered assistants that generate launch copy, media summaries, and conversational guidance.
 
-## Table of Contents
+## Table of contents
+1. [Highlights](#highlights)
+2. [Architecture](#architecture)
+3. [Directory structure](#directory-structure)
+4. [Getting started](#getting-started)
+5. [Environment variables](#environment-variables)
+6. [Running the app](#running-the-app)
+7. [Testing](#testing)
+8. [Notable endpoints & scripts](#notable-endpoints--scripts)
+9. [Contributing](#contributing)
+10. [License](#license)
 
-1. [What is Grey MarketPlace?](#-what-is-grey-marketplace)
-2. [Key Features](#key-features)
-3. [How It Works](#how-it-works)
-4. [Folder Structure](#folder-structure)
-5. [Getting Started](#getting-started)
-6. [Tech Stack](#tech-stack)
-7. [Environment Variables](#environment-variables)
-8. [Deployment](#deployment)
-9. [Auto Improvement](#auto-improvement)
-10. [Contributing](#contributing)
-11. [License](#license)
+## Highlights
+- **Launch Forge** – Create SPL tokens end-to-end from the browser. The form validates supply math, uploads hero art and supporting documents, and records the mint through the backend so new assets surface in the spotlight feed.
+- **Spotlight marketplace** – Browse freshly launched tokens with curated metadata, hero imagery, and creator context pulled from MongoDB and on-chain activity.
+- **Portfolio telemetry** – Wallet holders can review live holdings, creator allocations, and bonding-curve performance dashboards rendered with Recharts.
+- **SodaSpot market view** – A trading-style surface that includes lightweight charts, order book mocks, and trade history to prototype price discovery flows.
+- **SodaBot** – An OpenAI-powered copilot that summarizes ownership history, suggests next moves, and auto-fills launch copy or image alt text when creatives leave fields blank.
+- **Image-to-metadata assist** – `/api/items/describe` accepts base64 images and returns a generated title/description pair to streamline listings.
+- **Operational hardening** – The backend serves the compiled frontend with cache headers, optional email alerts, cron-based jobs, and JWT-protected routes for authenticated flows.
 
-## 🧠 What is Grey MarketPlace?
+## Architecture
+- **Frontend**: React 18, TypeScript, Chakra UI, Vite, TanStack Query, Recharts, Framer Motion, Solana Wallet Adapter.
+- **Backend**: Node.js + Express, TypeScript, Mongoose, JWT authentication, OpenAI SDK, Multer uploads, cron workers.
+- **Blockchain**: SPL token minting via `@solana/web3.js` and `@solana/spl-token`, plus portfolio persistence through MongoDB holdings.
+- **AI integrations**: GPT-4o for vision-assisted metadata and GPT-4 chat completions for SodaBot.
 
-Grey MarketPlace manages two distinct asset classes:
-
-### ✅ Variable Assets (Fractional Ownership / Tradable)
-These assets allow for ongoing ownership via shares that can be resold or transferred.
-
-**Examples**:
-- Racehorses
-- Real estate
-- Stocks
-- Art & collectibles
-- Music royalties
-
-**Smart Contract Logic**:
-- Tokenized fractional ownership via SPL token mints
-- Shares persist post-sale and can be traded in secondary markets
-- Metadata remains tied to ownership
-
-### ✅ Fixed Assets (Consumables / Non-Resalable)
-These assets are consumed, delivered, or redeemed upon purchase and cannot be resold.
-
-**Examples**:
-- Apples, coffee, food products
-- Merchandise
-- One-time services or tickets
-- Limited-use licenses
-
-**Smart Contract Logic**:
-- Claimable/burnable assets (e.g., limited-use SPL tokens or custom programs)
-- Once used, the token is burned or deactivated
-- Prevents secondary resale to maintain finality
-
-## Key Features
-- 🌐 Web3-native smart contract creation
-- 🧩 Toggle between Fixed and Variable asset types
-- 📸 Upload images and metadata (stored on IPFS/Pinata)
-- 💸 Set share price and total supply
-- 🧾 Mint NFTs or tokens based on asset logic
-- 📊 Upcoming Analytics dashboard
-
-## How It Works
-1. **Create an Asset Listing**  
-   Choose whether the item is fixed or variable. Upload an image, set the price, and input the total shares (if variable).
-2. **Smart Contract Deployment**  
-   - Variable assets mint transferable shares.
-   - Fixed assets mint burnable or non-transferable claims.
-3. **Buyers Interact**  
-   Buyers purchase shares or individual fixed units, depending on the listing.
-4. **Optional Secondary Market (for Variable)**  
-   Variable asset shares are tradeable on secondary marketplaces.
-
-## Folder Structure
+## Directory structure
 ```
 .
-├── frontend/                ← React-TypeScript app
-│   ├── public/              ← Static assets
-│   └── src/
-│       ├── api/             ← Axios wrappers for backend endpoints
-│       ├── components/      ← Chat UI and dashboard widgets
-│       ├── context/         ← App context (authentication, wallet)
-│       ├── hooks/           ← Custom React hooks
-│       ├── pages/           ← Create, List, Detail, etc.
-│       ├── styles/          ← Global CSS or Tailwind config
-│       ├── App.tsx          ← Root component
-│       └── main.tsx         ← React entrypoint
-│   ├── tsconfig.json
-│   ├── package.json
-│   └── vite.config.ts
-│
-├── backend/                 ← Node.js + TypeScript server
+├── backend/               # Express API (TypeScript)
 │   ├── src/
-│   │   ├── ai/              ← OpenAI helpers and personalization engine
-│   │   ├── controllers/     ← Express route handlers
-│   │   ├── models/          ← Mongoose models
-│   │   ├── routes/          ← API routes
-│   │   ├── utils/           ← Helpers (logging, config)
-│   │   └── index.ts         ← Server entrypoint
-│   ├── tsconfig.json
-│   ├── package.json
-│   ├── .env                 ← Actual secrets (never commit)
-│   └── .env.example         ← Template for environment variables
-│
-├── contracts/              ← Legacy Solidity contracts (unused with Solana)
-├── migrations/             ← Legacy Truffle migration scripts
-├── shared/                  ← Shared TypeScript types or utilities
-│   └── types/
-│       └── index.ts
-│
-├── .gitignore
+│   │   ├── ai/            # Prompt helpers
+│   │   ├── controllers/   # Route handlers (auth, marketplace, portfolio, etc.)
+│   │   ├── jobs/          # Background cron jobs
+│   │   ├── middleware/    # Shared Express middleware
+│   │   ├── models/        # Mongoose schemas (items, tokens, users)
+│   │   ├── routes/        # Feature routes (SodaBot, tokens, items, uploads)
+│   │   └── utils/         # Config, helpers
+│   └── package.json
+├── frontend/              # Vite + React SPA
+│   ├── public/
+│   └── src/
+│       ├── components/    # Reusable UI primitives
+│       ├── features/      # SodaSpot feature module (charts, order book)
+│       ├── hooks/, utils/ # Client helpers
+│       ├── pages/         # App screens (Welcome, Launch Forge, Analytics, etc.)
+│       └── theme.ts       # Chakra theme overrides
+├── shared/                # Cross-package TypeScript types
+├── scripts/               # Tooling (OpenAI-driven auto-improve)
+├── setup.sh               # Install helper for backend/frontend
+├── dev.sh                 # Starts both servers in parallel
+├── jest.config.js         # Root Jest config for backend tests
 └── README.md
 ```
 
-## Getting Started
-
+## Getting started
 ### Prerequisites
-- **Node.js & npm** (v16+ recommended)
-- **Git** (to clone and version-control the project)
-- **Phantom**, **Backpack**, or another Solana wallet extension installed in your browser
-- (Optional) A Solana RPC provider URL if you want to target something other than the public devnet
+- **Node.js 18+** and **npm**
+- **Git**
+- A Solana wallet (Phantom, Backpack, etc.) for testing mint flows
+- Optional: Access to a MongoDB deployment and an OpenAI API key
 
-### Clone & Install
-
-1. Open a terminal and run:
-   ```bash
-   git clone https://github.com/your-username/GreyMarketPlace.git
-   cd GreyMarketPlace
-   ```
-   Replace `your-username` with the GitHub account that hosts this repository.
-2. Install dependencies for both apps:
-   ```bash
-   ./setup.sh
-   ```
-   This convenience script installs all Node dependencies in the `frontend`, `backend`, and `shared` workspaces.
-3. Copy `.env.example` to `.env` and fill in your secrets.
-4. Start the development servers:
-   ```bash
-   ./dev.sh
-   ```
-   - Frontend runs at **http://localhost:5173**
-   - Backend listens on **http://localhost:4000**
-   The script boots both services concurrently using `npm run dev` in each workspace.
-5. Configure Solana RPC endpoints as needed:
-   - Update `VITE_SOLANA_RPC_URL` in `frontend/.env` to point to your cluster (defaults to devnet).
-   - Set `SOLANA_RPC_URL` in `backend/.env` if you want the API to use a custom RPC provider.
-
-### Testing
-
-- **Frontend**: `cd frontend && npm test`
-- **Backend**: `cd backend && npm test`
-- **Solana programs**: managed externally; SPL token interactions are performed at runtime via the wallet adapter
-
-Run these commands after installing dependencies to ensure your changes are stable before opening a pull request.
-
-## Tech Stack
-- **Frontend:** React, TypeScript, Chakra UI
-- **Backend:** Node.js, TypeScript, Express, MongoDB
-- **On-chain Integration:** Solana Web3.js, SPL Token toolkit
-- **Storage:** IPFS/Pinata for asset metadata and images
-- **AI:** OpenAI GPT-4o vision is used to auto-generate titles and descriptions
-  for uploaded images when these fields are left blank during item creation
-
-## Environment Variables
-Copy `.env.example` to `.env` and fill in:
-- **PORT** — Backend port (default `4000`)
-- **OPENAI_API_KEY** — OpenAI key for the chatbot and image captioning
-- **SOLANA_RPC_URL** — RPC endpoint for Solana reads/writes (defaults to devnet)
-- **JWT_SECRET** — Secret used to sign JWTs
-- **JWT_EXPIRES_IN** — Token lifetime (e.g. `1d`)
-- **MONGO_URI** — MongoDB connection string
-- **SMTP_HOST**, **SMTP_PORT**, **SMTP_USER**, **SMTP_PASS**, **ALERT_EMAIL** — Optional email alert configuration
-- **VITE_BACKEND_URL** — Base URL of the deployed backend (omit for same-origin deployments)
-- **VITE_SAMPLE_METADATA_URL** — Optional sample metadata used by the create flow
-- **VITE_NFT_STORAGE_KEY** — API key for NFT.Storage V2 uploads
-- **VITE_SOLANA_RPC_URL** — Frontend RPC endpoint override (defaults to devnet)
-
-### Auto captions with OpenAI Vision
-`POST /api/items/describe` accepts a base64 image and returns a generated title
-and short description. The item creation form uses this endpoint when the user
-leaves those fields blank.
-
-## Deployment
-
-1. **Frontend**
-   ```bash
-   cd frontend
-   npm run build
-   ```
-   - Deploy the `dist/` folder to Vercel, Netlify, etc.
-
-2. **Backend**
-   ```bash
-   cd backend
-   npx tsc
-   ```
-   - Run with PM2, Docker, or serverless.
-
-3. **Solana**
-   - Use the Solana CLI or Anchor to deploy custom programs if your use-case requires them.
-   - SPL token mints can be created directly from the frontend using the provided launcher.
-
-## Operational Notes
-
-- **Static asset caching:** The backend now serves the compiled frontend from `frontend/dist` with cache headers that mark hashed CSS and JS bundles as immutable for one year while leaving `index.html` un-cached. This ensures long-lived assets participate in the browser's conditional requests (HTTP 304) without risking stale HTML shells.
-- **Wallet Standard adoption:** The React entrypoint relies on `useStandardWalletAdapters` and filters unexpected detection payloads. This removes redundant Solflare-specific adapters and downgrades duplicate warnings to debug-level context so expected Wallet Standard behaviour does not alarm operators.
-- **Edge monitoring:** Because most request latency occurs before the origin is reached, pair the backend health checks with CDN/edge dashboards to watch cache hit rates, 304 ratios, and tail latency. Sudden degradations often indicate caching regressions or wallet detection loops that should be triaged quickly.
-
-## Auto Improvement
-This repository includes an experimental script that calls OpenAI to suggest refinements to any JavaScript or TypeScript file. Provide a file path and the script will overwrite it with the model's response.
-
+### Clone and install
 ```bash
-npm run improve -- path/to/file.ts
+git clone https://github.com/your-username/SodaPop.git
+cd SodaPop
+./setup.sh            # installs backend and frontend dependencies
 ```
-Set `OPENAI_API_KEY` in your environment before running.
+You can install manually with `npm install` inside both `backend/` and `frontend/` if you prefer.
+
+## Environment variables
+Create `.env` files in `backend/` and `frontend/` (or export them in your shell) before running the stack.
+
+### Backend (`backend/.env`)
+| Variable | Description |
+| --- | --- |
+| `PORT` | API port (default `4000`). |
+| `JWT_SECRET` | Secret string used to sign access tokens. |
+| `JWT_EXPIRES_IN` | Token lifetime (e.g. `1h`, `1d`). |
+| `MONGO_URI` | MongoDB connection string; omit to run stateless prototypes. |
+| `OPENAI_API_KEY` | Required for SodaBot chat and image captioning. |
+| `SOLANA_RPC_URL` | Solana RPC endpoint (defaults to devnet). |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `ALERT_EMAIL` | Optional email alert configuration. |
+
+### Frontend (`frontend/.env`)
+| Variable | Description |
+| --- | --- |
+| `VITE_BACKEND_URL` | Origin of the backend when different from the frontend. Appends `/api` automatically. |
+| `VITE_API_BASE_URL` | Explicit API base override (falls back to `/api`). |
+| `VITE_SOLANA_RPC_URL` | Custom RPC URL for the wallet adapter. |
+| `VITE_SAMPLE_METADATA_URL` | Optional JSON used to pre-fill the launch form. |
+| `VITE_CLUSTER` | Display hint for the target cluster (defaults to `mainnet` in the UI copy). |
+
+## Running the app
+### Development
+```bash
+./dev.sh
+```
+This launches `npm run dev` in both `backend/` (ts-node-dev on port 4000) and `frontend/` (Vite on port 5173). The frontend proxies API calls to the backend via `/api`.
+
+You can run the services separately if needed:
+```bash
+cd backend && npm run dev
+cd frontend && npm run dev
+```
+
+### Production build
+```bash
+cd frontend && npm run build    # outputs to frontend/dist
+cd backend && npm run build     # compiles TypeScript to dist/
+```
+Serve `frontend/dist` behind a static host and point the backend at the same Mongo/OpenAI resources. The Express server automatically serves the built SPA with immutable cache headers for hashed assets.
+
+## Testing
+- **Backend unit tests**: `npm test` (from the repo root or inside `backend/`).
+- **Frontend component tests**: `cd frontend && npm run test` (uses Vitest).
+
+Add new tests before committing critical changes to ensure existing flows remain stable.
+
+## Notable endpoints & scripts
+- `POST /api/tokens/record` – Persists launched SPL tokens and creator allocations.
+- `GET /api/portfolio?wallet=<address>` – Returns holdings, launch history, and creator share for a wallet.
+- `POST /api/items/describe` – Generates title/description metadata from an image (requires OpenAI vision access).
+- `POST /api/sodabot` – Chat endpoint powering the in-app assistant.
+- `npm run improve -- path/to/file.ts` – Experimental script that asks OpenAI for inline refactors; use with caution.
 
 ## Contributing
-1. Fork the repo and create a branch:
+1. Fork the repo and create a feature branch:
    ```bash
    git checkout -b feature/your-feature
    ```
-2. Commit changes and push:
-   ```bash
-   git commit -m "Add feature X"
-   git push origin feature/your-feature
-   ```
-3. Open a pull request with a clear description.
+2. Commit with clear messages and push your branch.
+3. Open a pull request describing the change, tests, and any environment considerations.
 
 ## License
-
-This project is licensed under the Business Source License 1.1. See [LICENSE](LICENSE) for details.
+This project is distributed under the Business Source License 1.1. See [LICENSE](./LICENSE) for full terms.
