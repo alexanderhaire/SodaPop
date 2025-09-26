@@ -1,7 +1,8 @@
 import { place, useSoda } from "./store";
+import type { State } from "./store";
 import { useState } from "react";
 export default function Ticket() {
-  const last = useSoda(s => s.last);
+  const last = useSoda((s: State) => s.last);
   const [side, setSide] = useState<"buy"|"sell">("buy");
   const [type, setType] = useState<"limit"|"market">("limit");
   const [price, setPrice] = useState<number | "">(last ?? "");
