@@ -23,20 +23,13 @@ import {
   Stack,
   Link,
 } from "@chakra-ui/react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip as ChartTooltip,
-  ResponsiveContainer,
-} from "recharts";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
 import axios from "../utils/axiosConfig";
 import itemsData from "../mocks/items.json";
 import assetsData from "../mocks/assets.json";
 import { formatAddress } from "../utils/formatAddress";
+import SodaSpot from "@/features/sodaspot/SodaSpot";
 
 type MarketDatum = { price: number; timestamp: string };
 
@@ -73,7 +66,6 @@ const ItemDetail: React.FC = () => {
   const [sharesOwned, setSharesOwned] = useState<number | null>(null);
   const [calcShares, setCalcShares] = useState<string>("");
   const [calcEarnings, setCalcEarnings] = useState<string>("");
-  const [marketData, setMarketData] = useState<MarketDatum[]>([]);
   const [latestPrice, setLatestPrice] = useState<number | null>(null);
 
   useEffect(() => {
@@ -111,7 +103,6 @@ const ItemDetail: React.FC = () => {
       try {
         const res = await axios.get(`/asset/market-data/${id}`);
         const data = res.data as MarketDatum;
-        setMarketData((prev) => [...prev.slice(-19), data]);
         setLatestPrice(data.price);
       } catch (err) {
         console.error("Failed to load market data:", err);
@@ -251,32 +242,12 @@ const ItemDetail: React.FC = () => {
         <Divider />
 
         <Stack direction={{ base: "column", md: "row" }} spacing={6}>
-          <Box
-            flex="1"
-            bg="rgba(12, 18, 38, 0.9)"
-            borderRadius="2xl"
-            border="1px solid rgba(114, 140, 255, 0.2)"
-            p={4}
-            minH="260px"
-          >
-            {marketData.length === 0 ? (
-              <Text color="whiteAlpha.600">Streaming market data…</Text>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={marketData}>
-                  <XAxis dataKey="timestamp" hide />
-                  <YAxis stroke="#cbd5f5" tick={{ fill: "#cbd5f5" }} />
-                  <ChartTooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="price"
-                    stroke="#7c3aed"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
+          <Box flex="1" minH="260px">
+            <SodaSpot
+              totalShares={asset.totalShares}
+              issuedShares={mintedSoFar ?? 0}
+              treasuryAskPrice={sharePriceSol}
+            />
           </Box>
 
           <VStack
