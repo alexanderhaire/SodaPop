@@ -1,6 +1,7 @@
 import { useSoda } from "./store";
+import type { State } from "./store";
 export default function Trades() {
-  const trades = useSoda(s => s.trades);
+  const trades = useSoda((s: State) => s.trades);
   return (
     <div className="p-3">
       <div className="flex justify-between text-xs text-zinc-400 mb-1"><span>Recent Trades</span></div>

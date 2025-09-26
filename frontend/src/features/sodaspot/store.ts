@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { Engine, MarketConfig, Trade, Book } from "./engine";
 
 type Candle = { t: number; o: number; h: number; l: number; c: number };
-type State = {
+export type State = {
   engine: Engine;
   book?: Book;
   trades: Trade[];

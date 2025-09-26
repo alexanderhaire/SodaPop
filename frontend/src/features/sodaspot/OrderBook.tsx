@@ -1,4 +1,5 @@
 import { useSoda } from "./store";
+import type { State } from "./store";
 function Row({ p, s, side }: { p: number; s: number; side: "bid"|"ask" }) {
   return (
     <div className="grid grid-cols-3 text-sm py-0.5">
@@ -9,7 +10,7 @@ function Row({ p, s, side }: { p: number; s: number; side: "bid"|"ask" }) {
   );
 }
 export default function OrderBook() {
-  const book = useSoda(s => s.book);
+  const book = useSoda((s: State) => s.book);
   if (!book) return <div className="p-3 text-zinc-400">Loading book…</div>;
   const spread = book.bestAsk && book.bestBid ? (book.bestAsk - book.bestBid) : 0;
   return (

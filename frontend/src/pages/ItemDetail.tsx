@@ -196,6 +196,15 @@ const ItemDetail: React.FC = () => {
     return (shares / maxSupply) * 100;
   }, [calcShares, maxSupply]);
 
+  if (!id) {
+    return (
+      <Box p={6}>
+        <Heading>Missing item id</Heading>
+        <Text>No item id was provided.</Text>
+      </Box>
+    );
+  }
+
   if (!item || !asset) {
     return (
       <Box p={6}>
@@ -244,6 +253,7 @@ const ItemDetail: React.FC = () => {
         <Stack direction={{ base: "column", md: "row" }} spacing={6}>
           <Box flex="1" minH="260px">
             <SodaSpot
+              slug={id}
               totalShares={asset.totalShares}
               issuedShares={mintedSoFar ?? 0}
               treasuryAskPrice={sharePriceSol}
