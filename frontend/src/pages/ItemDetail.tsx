@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Box,
@@ -22,6 +22,17 @@ import {
   Badge,
   Stack,
   Link,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
+  Spinner,
 } from "@chakra-ui/react";
 import {
   LineChart,
@@ -30,6 +41,7 @@ import {
   YAxis,
   Tooltip as ChartTooltip,
   ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
@@ -75,6 +87,48 @@ const ItemDetail: React.FC = () => {
   const [calcEarnings, setCalcEarnings] = useState<string>("");
   const [marketData, setMarketData] = useState<MarketDatum[]>([]);
   const [latestPrice, setLatestPrice] = useState<number | null>(null);
+  const [tradeShares, setTradeShares] = useState<string>("1");
+
+  const appendMarketPoint = useCallback((price: number, timestamp?: string) => {
+    const normalizedPrice = Number(price.toFixed(3));
+    const label =
+      timestamp ??
+      new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    setMarketData((prev) => [...prev.slice(-39), { price: normalizedPrice, timestamp: label }]);
+    setLatestPrice(normalizedPrice);
+  }, []);
+
+  useEffect(() => {
+    if (!asset) {
+      setMarketData([]);
+      setLatestPrice(null);
+      return;
+    }
+
+    const basePrice = asset.sharePrice ?? 0.25;
+    const now = Date.now();
+    const seeded: MarketDatum[] = [];
+    let runningPrice = basePrice;
+
+    for (let idx = 0; idx < 24; idx += 1) {
+      const drift = 1 + (Math.sin(idx / 3) + (Math.random() - 0.5) * 0.6) / 40;
+      runningPrice = Math.max(runningPrice * drift, basePrice * 0.45);
+      const pointTime = new Date(now - (23 - idx) * 60_000);
+      seeded.push({
+        price: Number(runningPrice.toFixed(3)),
+        timestamp: pointTime.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      });
+    }
+
+    setMarketData(seeded);
+    setLatestPrice(seeded[seeded.length - 1]?.price ?? basePrice);
+  }, [asset]);
 
   useEffect(() => {
     if (!asset) {
@@ -111,8 +165,7 @@ const ItemDetail: React.FC = () => {
       try {
         const res = await axios.get(`/asset/market-data/${id}`);
         const data = res.data as MarketDatum;
-        setMarketData((prev) => [...prev.slice(-19), data]);
-        setLatestPrice(data.price);
+        appendMarketPoint(data.price, data.timestamp);
       } catch (err) {
         console.error("Failed to load market data:", err);
       }
@@ -120,7 +173,7 @@ const ItemDetail: React.FC = () => {
     fetchMarket();
     const interval = setInterval(fetchMarket, 5000);
     return () => clearInterval(interval);
-  }, [id]);
+  }, [appendMarketPoint, id]);
 
   const sharePriceSol = asset?.sharePrice ?? 0;
   const sharePriceLamports = Math.round(sharePriceSol * LAMPORTS_PER_SOL);
@@ -171,6 +224,9 @@ const ItemDetail: React.FC = () => {
       setMintedSoFar((prev) => (prev ?? 0) + 1);
       setRemainingSupply((prev) => (prev !== null ? Math.max(prev - 1, 0) : prev));
 
+      const nextPrice = (latestPrice ?? sharePriceSol) * 1.015;
+      appendMarketPoint(nextPrice);
+
       toast({
         title: "Share purchased",
         description: `Sent ${sharePriceSol.toFixed(3)} SOL to the treasury`,
@@ -204,6 +260,114 @@ const ItemDetail: React.FC = () => {
     if (!Number.isFinite(shares) || shares <= 0) return 0;
     return (shares / maxSupply) * 100;
   }, [calcShares, maxSupply]);
+
+  const totalHoldings = sharesOwned ?? 0;
+
+  const tradeValue = useMemo(() => {
+    if (!latestPrice) return "0";
+    const quantity = Number(tradeShares);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return "0";
+    }
+    return (latestPrice * quantity).toFixed(3);
+  }, [latestPrice, tradeShares]);
+
+  const handleSimulatedTrade = useCallback(
+    (mode: "buy" | "sell") => {
+      if (!asset) {
+        return;
+      }
+
+      const quantity = Number(tradeShares);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        toast({
+          title: "Enter a valid quantity",
+          description: "Specify how many shares you would like to trade.",
+          status: "warning",
+        });
+        return;
+      }
+
+      if (mode === "sell" && (sharesOwned ?? 0) < quantity) {
+        toast({
+          title: "Insufficient holdings",
+          description: "You do not control enough shares to complete this sale.",
+          status: "error",
+        });
+        return;
+      }
+
+      if (mode === "buy" && remainingSupply !== null && remainingSupply < quantity) {
+        toast({
+          title: "Not enough supply",
+          description: "The treasury does not have that many shares remaining.",
+          status: "error",
+        });
+        return;
+      }
+
+      const currentPrice = latestPrice ?? asset.sharePrice ?? 0.25;
+      const impactFactor = 0.0125 * quantity;
+      const multiplier = mode === "buy" ? 1 + impactFactor : Math.max(0.35, 1 - impactFactor);
+      const updatedPrice = Math.max(currentPrice * multiplier, 0.01);
+
+      appendMarketPoint(updatedPrice);
+
+      if (mode === "buy") {
+        setSharesOwned((prev) => (prev ?? 0) + quantity);
+        setMintedSoFar((prev) => (prev ?? 0) + quantity);
+        setRemainingSupply((prev) =>
+          prev !== null ? Math.max(prev - quantity, 0) : prev
+        );
+        toast({
+          title: "Shares acquired",
+          description: `Purchased ${quantity} share${quantity === 1 ? "" : "s"} of ${asset.name}.`,
+          status: "success",
+        });
+      } else {
+        setSharesOwned((prev) => Math.max((prev ?? 0) - quantity, 0));
+        setMintedSoFar((prev) =>
+          prev !== null ? Math.max(prev - quantity, 0) : prev
+        );
+        setRemainingSupply((prev) =>
+          prev !== null && maxSupply !== null
+            ? Math.min(prev + quantity, maxSupply)
+            : prev
+        );
+        toast({
+          title: "Shares sold",
+          description: `Sold ${quantity} share${quantity === 1 ? "" : "s"} of ${asset.name}.`,
+          status: "info",
+        });
+      }
+      setTradeShares("1");
+    },
+    [appendMarketPoint, asset, latestPrice, maxSupply, remainingSupply, sharesOwned, toast, tradeShares]
+  );
+
+  const computeProjectedPrice = useCallback(
+    (mode: "buy" | "sell") => {
+      if (!latestPrice) {
+        return null;
+      }
+      const quantity = Number(tradeShares);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        return null;
+      }
+      if (mode === "sell" && quantity > (sharesOwned ?? 0)) {
+        return null;
+      }
+      const impactFactor = 0.0125 * quantity;
+      const multiplier =
+        mode === "buy" ? 1 + impactFactor : Math.max(0.35, 1 - impactFactor);
+      const projected = Math.max(latestPrice * multiplier, 0.01);
+      return Number(projected.toFixed(3));
+    },
+    [latestPrice, tradeShares, sharesOwned]
+  );
+
+  const projectedBuyPrice = computeProjectedPrice("buy");
+  const projectedSellPrice = computeProjectedPrice("sell");
 
   if (!item || !asset) {
     return (
@@ -257,26 +421,68 @@ const ItemDetail: React.FC = () => {
             borderRadius="2xl"
             border="1px solid rgba(114, 140, 255, 0.2)"
             p={4}
-            minH="260px"
+            minH="320px"
+            display="flex"
+            flexDirection="column"
           >
-            {marketData.length === 0 ? (
-              <Text color="whiteAlpha.600">Streaming market data…</Text>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={marketData}>
-                  <XAxis dataKey="timestamp" hide />
-                  <YAxis stroke="#cbd5f5" tick={{ fill: "#cbd5f5" }} />
-                  <ChartTooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="price"
-                    stroke="#7c3aed"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            )}
+            <HStack justify="space-between" mb={3}>
+              <VStack align="flex-start" spacing={0}>
+                <Text color="whiteAlpha.600" fontSize="xs" textTransform="uppercase">
+                  AsodaPop treasury price
+                </Text>
+                <Heading size="md">
+                  {latestPrice ? `${latestPrice.toFixed(3)} SOL` : "—"}
+                </Heading>
+              </VStack>
+              <Badge colorScheme="purple">Live</Badge>
+            </HStack>
+            <Box flex="1">
+              {marketData.length === 0 ? (
+                <HStack
+                  justify="center"
+                  align="center"
+                  spacing={3}
+                  color="whiteAlpha.600"
+                  h="100%"
+                >
+                  <Spinner size="sm" />
+                  <Text>Preparing price feed…</Text>
+                </HStack>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={marketData} margin={{ top: 5, right: 12, left: -18, bottom: 0 }}>
+                    <CartesianGrid stroke="rgba(124, 58, 237, 0.15)" strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="timestamp"
+                      stroke="#6b7ac9"
+                      tick={{ fill: "#9daafc", fontSize: 12 }}
+                      interval="preserveStartEnd"
+                    />
+                    <YAxis
+                      stroke="#6b7ac9"
+                      tick={{ fill: "#9daafc", fontSize: 12 }}
+                      domain={["auto", "auto"]}
+                    />
+                    <ChartTooltip
+                      contentStyle={{
+                        background: "rgba(14, 18, 32, 0.95)",
+                        border: "1px solid rgba(124, 58, 237, 0.45)",
+                        borderRadius: "12px",
+                        color: "#e9edff",
+                      }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="price"
+                      stroke="#8b5cf6"
+                      strokeWidth={2.5}
+                      dot={false}
+                      activeDot={{ r: 5 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </Box>
           </Box>
 
           <VStack
@@ -285,7 +491,7 @@ const ItemDetail: React.FC = () => {
             borderRadius="2xl"
             border="1px solid rgba(114, 140, 255, 0.2)"
             p={5}
-            spacing={3}
+            spacing={4}
             align="stretch"
           >
             <Heading size="sm">Signal summary</Heading>
@@ -311,6 +517,99 @@ const ItemDetail: React.FC = () => {
                   : "All shares sold"}
               </Text>
             )}
+            <Divider borderColor="rgba(114, 140, 255, 0.2)" />
+            <VStack align="stretch" spacing={1}>
+              <Text fontSize="sm" color="whiteAlpha.600">
+                Holdings: {totalHoldings} share{totalHoldings === 1 ? "" : "s"}
+              </Text>
+              {remainingSupply !== null && (
+                <Text fontSize="sm" color="whiteAlpha.600">
+                  Remaining supply: {remainingSupply}
+                </Text>
+              )}
+            </VStack>
+            <Tabs variant="soft-rounded" colorScheme="purple" size="sm">
+              <TabList>
+                <Tab>Buy</Tab>
+                <Tab>Sell</Tab>
+              </TabList>
+              <TabPanels mt={2}>
+                <TabPanel px={0}>
+                  <VStack align="stretch" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="sm">Shares to buy</FormLabel>
+                      <NumberInput
+                        min={1}
+                        step={1}
+                        precision={0}
+                        value={tradeShares}
+                        max={remainingSupply ?? undefined}
+                        clampValueOnBlur={false}
+                        onChange={(valueAsString) => setTradeShares(valueAsString)}
+                      >
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                    </FormControl>
+                    <Text fontSize="sm" color="whiteAlpha.600">
+                      Est. cost: {tradeValue} SOL
+                    </Text>
+                    {remainingSupply !== null && (
+                      <Text fontSize="xs" color="whiteAlpha.500">
+                        Max available: {remainingSupply}
+                      </Text>
+                    )}
+                    {projectedBuyPrice !== null && (
+                      <Text fontSize="sm" color="whiteAlpha.600">
+                        Projected price after trade: {projectedBuyPrice.toFixed(3)} SOL
+                      </Text>
+                    )}
+                    <Button variant="cta" onClick={() => handleSimulatedTrade("buy")}>
+                      Buy shares
+                    </Button>
+                  </VStack>
+                </TabPanel>
+                <TabPanel px={0}>
+                  <VStack align="stretch" spacing={3}>
+                    <FormControl>
+                      <FormLabel fontSize="sm">Shares to sell</FormLabel>
+                      <NumberInput
+                        min={1}
+                        step={1}
+                        precision={0}
+                        value={tradeShares}
+                        max={totalHoldings > 0 ? totalHoldings : undefined}
+                        clampValueOnBlur={false}
+                        onChange={(valueAsString) => setTradeShares(valueAsString)}
+                      >
+                        <NumberInputField />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                    </FormControl>
+                    <Text fontSize="sm" color="whiteAlpha.600">
+                      Est. proceeds: {tradeValue} SOL
+                    </Text>
+                    <Text fontSize="xs" color="whiteAlpha.500">
+                      Available to sell: {totalHoldings}
+                    </Text>
+                    {projectedSellPrice !== null && (
+                      <Text fontSize="sm" color="whiteAlpha.600">
+                        Projected price after trade: {projectedSellPrice.toFixed(3)} SOL
+                      </Text>
+                    )}
+                    <Button colorScheme="purple" variant="outline" onClick={() => handleSimulatedTrade("sell")}>
+                      Sell shares
+                    </Button>
+                  </VStack>
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
           </VStack>
         </Stack>
 
